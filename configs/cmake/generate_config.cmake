@@ -9,6 +9,7 @@ endif()
 pnx_ioc_parse("${IOC}")
 
 file(READ "${PARAMS}" params_json)
+set(generated_semicolon_token "__PNX_GENERATED_SEMICOLON__")
 
 # --- params.json: build ---
 string(JSON build_usbx ERROR_VARIABLE json_err GET "${params_json}" build usbx)
@@ -54,6 +55,19 @@ function(_pnx_can_id_type_expr val out_var)
     endif()
 endfunction()
 
+function(_pnx_cpp_identifier input out_var)
+    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" ident "${input}")
+    string(REGEX REPLACE "_+" "_" ident "${ident}")
+    string(REGEX REPLACE "^_+|_+$" "" ident "${ident}")
+    if(ident STREQUAL "")
+        set(ident "unnamed")
+    endif()
+    if(ident MATCHES "^[0-9]")
+        set(ident "_${ident}")
+    endif()
+    set(${out_var} "${ident}" PARENT_SCOPE)
+endfunction()
+
 _pnx_json_bool_to_cmake("${motor_dji}" MOTOR_DJI)
 _pnx_json_bool_to_cmake("${motor_dm}" MOTOR_DM)
 _pnx_json_bool_to_cmake("${motor_lk}" MOTOR_LK)
@@ -75,6 +89,95 @@ string(TOLOWER "${remoter_uart}" remoter_uart)
 string(TOLOWER "${referee_uart}" referee_uart)
 string(TOLOWER "${remoter_source}" remoter_source)
 
+set(gpio_input_config_list "")
+set(gpio_input_enum_entries "")
+set(gpio_input_binding_body "")
+set(gpio_output_config_list "")
+set(gpio_output_enum_entries "")
+set(gpio_output_binding_body "")
+
+string(JSON gpio_input_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings gpio_inputs)
+if(json_err)
+    set(gpio_input_count 0)
+endif()
+if(gpio_input_count GREATER 0)
+    math(EXPR gpio_input_last "${gpio_input_count} - 1")
+    foreach(index RANGE 0 ${gpio_input_last})
+        string(JSON role MEMBER "${params_json}" bindings gpio_inputs ${index})
+        _pnx_cpp_identifier("${role}" role_ident)
+        if(NOT role_ident STREQUAL role)
+            message(FATAL_ERROR "GPIO input role '${role}' must be a C++ identifier")
+        endif()
+        string(JSON pin GET "${params_json}" bindings gpio_inputs ${role} pin)
+        string(JSON active_level GET "${params_json}" bindings gpio_inputs ${role} active_level)
+        string(TOLOWER "${pin}" pin)
+        string(TOLOWER "${active_level}" active_level)
+        if(NOT pin MATCHES "^p([a-k])([0-9]|1[0-5])$")
+            message(FATAL_ERROR "GPIO input role '${role}' has invalid pin '${pin}'")
+        endif()
+        set(port "${CMAKE_MATCH_1}")
+        set(pin_number "${CMAKE_MATCH_2}")
+        if(NOT active_level STREQUAL "low" AND NOT active_level STREQUAL "high")
+            message(FATAL_ERROR "GPIO input role '${role}' active_level must be low or high")
+        endif()
+        string(TOUPPER "${pin}" pin_upper)
+        pnx_ioc_get_value("${PNX_IOC_LINES}" "${pin_upper}.Signal" signal)
+        if(NOT signal STREQUAL "GPIO_Input" AND NOT signal MATCHES "^GPXTI[0-9]+$")
+            message(FATAL_ERROR "GPIO input role '${role}' pin ${pin} is not an IOC input")
+        endif()
+        list(APPEND gpio_input_config_list
+            "{ port_id::${port}, ${pin_number}U, active_level::${active_level} }")
+        if(NOT gpio_input_enum_entries STREQUAL "")
+            string(APPEND gpio_input_enum_entries ", ")
+        endif()
+        string(APPEND gpio_input_enum_entries "${role_ident} = ${index}")
+        string(APPEND gpio_input_binding_body
+            "inline constexpr bsp::gpio::input ${role_ident} = bsp::gpio::input::${role_ident}${generated_semicolon_token}\n")
+    endforeach()
+endif()
+
+string(JSON gpio_output_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings gpio_outputs)
+if(json_err)
+    set(gpio_output_count 0)
+endif()
+if(gpio_output_count GREATER 0)
+    math(EXPR gpio_output_last "${gpio_output_count} - 1")
+    foreach(index RANGE 0 ${gpio_output_last})
+        string(JSON role MEMBER "${params_json}" bindings gpio_outputs ${index})
+        _pnx_cpp_identifier("${role}" role_ident)
+        if(NOT role_ident STREQUAL role)
+            message(FATAL_ERROR "GPIO output role '${role}' must be a C++ identifier")
+        endif()
+        string(JSON pin GET "${params_json}" bindings gpio_outputs ${role} pin)
+        string(JSON active_level GET "${params_json}" bindings gpio_outputs ${role} active_level)
+        string(TOLOWER "${pin}" pin)
+        string(TOLOWER "${active_level}" active_level)
+        if(NOT pin MATCHES "^p([a-k])([0-9]|1[0-5])$")
+            message(FATAL_ERROR "GPIO output role '${role}' has invalid pin '${pin}'")
+        endif()
+        set(port "${CMAKE_MATCH_1}")
+        set(pin_number "${CMAKE_MATCH_2}")
+        if(NOT active_level STREQUAL "low" AND NOT active_level STREQUAL "high")
+            message(FATAL_ERROR "GPIO output role '${role}' active_level must be low or high")
+        endif()
+        string(TOUPPER "${pin}" pin_upper)
+        pnx_ioc_get_value("${PNX_IOC_LINES}" "${pin_upper}.Signal" signal)
+        if(NOT signal STREQUAL "GPIO_Output")
+            message(FATAL_ERROR "GPIO output role '${role}' pin ${pin} is not an IOC output")
+        endif()
+        list(APPEND gpio_output_config_list
+            "{ port_id::${port}, ${pin_number}U, active_level::${active_level} }")
+        if(NOT gpio_output_enum_entries STREQUAL "")
+            string(APPEND gpio_output_enum_entries ", ")
+        endif()
+        string(APPEND gpio_output_enum_entries "${role_ident} = ${index}")
+        string(APPEND gpio_output_binding_body
+            "inline constexpr bsp::gpio::output ${role_ident} = bsp::gpio::output::${role_ident}${generated_semicolon_token}\n")
+    endforeach()
+endif()
+list(JOIN gpio_input_config_list ", " gpio_input_config_cpp)
+list(JOIN gpio_output_config_list ", " gpio_output_config_cpp)
+
 # --- HAS_* from IOC + bindings ---
 if(PNX_IOC_HAS_SPI2)
     set(HAS_AHRS 1)
@@ -86,18 +189,6 @@ if(PNX_IOC_HAS_SPI6)
     set(HAS_LED 1)
 else()
     set(HAS_LED 0)
-endif()
-
-if(PNX_IOC_HAS_TIM3)
-    set(HAS_PWM_TIM3_CH4 1)
-else()
-    set(HAS_PWM_TIM3_CH4 0)
-endif()
-
-if(PNX_IOC_HAS_TIM12)
-    set(HAS_PWM_TIM12_CH2 1)
-else()
-    set(HAS_PWM_TIM12_CH2 0)
 endif()
 
 pnx_ioc_hw_in_list("${PNX_IOC_UART_HW}" "${remoter_uart}" remoter_uart_present)
@@ -304,28 +395,118 @@ endif()
 set(spi_bus_count 2)
 set(spi_config_cpp "{ ${spi2_enabled}, handle_id::spi2 }, { ${spi6_enabled}, handle_id::spi6 }")
 
-if(PNX_IOC_HAS_TIM3)
-    set(pwm_tim3_ch4_enabled "true")
-    set(pwm_tim3_ch4_timer "timer_id::tim3")
-    set(pwm_tim3_ch4_channel "channel_id::ch4")
-else()
-    set(pwm_tim3_ch4_enabled "false")
-    set(pwm_tim3_ch4_timer "timer_id::none")
-    set(pwm_tim3_ch4_channel "channel_id::none")
+set(pwm_channel_config_list "")
+set(pwm_channel_enum_entries "")
+set(pwm_feature_macros "")
+set(pwm_feature_constants "")
+set(pwm_binding_cases "")
+set(pwm_channel_index 0)
+foreach(resource ${PNX_IOC_PWM_CHANNELS})
+    if(NOT resource MATCHES "^(TIM[0-9]+)_CH([1-4])$")
+        message(FATAL_ERROR "Invalid discovered PWM resource ${resource}")
+    endif()
+    set(timer "${CMAKE_MATCH_1}")
+    set(channel_number "${CMAKE_MATCH_2}")
+    string(TOLOWER "${resource}" channel_ident)
+    string(TOLOWER "${timer}" timer_lower)
+    pnx_ioc_timer_clock_hz("${PNX_IOC_LINES}" "${timer}" timer_clock_hz)
+    list(APPEND pwm_channel_config_list "{ ${timer_clock_hz}U }")
+    if(NOT pwm_channel_enum_entries STREQUAL "")
+        string(APPEND pwm_channel_enum_entries ", ")
+    endif()
+    string(APPEND pwm_channel_enum_entries "${channel_ident} = ${pwm_channel_index}")
+    string(APPEND pwm_feature_macros "#define HAS_PWM_${resource} 1\n")
+    string(APPEND pwm_feature_constants
+        "inline constexpr bool has_pwm_${channel_ident} = true${generated_semicolon_token}\n")
+    string(APPEND pwm_binding_cases
+        "    case channel::${channel_ident}: out = { &h${timer_lower}, TIM_CHANNEL_${channel_number} }${generated_semicolon_token} return true${generated_semicolon_token}\n")
+    math(EXPR pwm_channel_index "${pwm_channel_index} + 1")
+endforeach()
+list(JOIN pwm_channel_config_list ", " pwm_config_cpp)
+list(LENGTH PNX_IOC_PWM_CHANNELS pwm_channel_count)
+
+set(pwm_app_binding_body "")
+string(JSON pwm_app_binding_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings pwm_channels)
+if(json_err)
+    set(pwm_app_binding_count 0)
 endif()
-if(PNX_IOC_HAS_TIM12)
-    set(pwm_tim12_ch2_enabled "true")
-    set(pwm_tim12_ch2_timer "timer_id::tim12")
-    set(pwm_tim12_ch2_channel "channel_id::ch2")
-else()
-    set(pwm_tim12_ch2_enabled "false")
-    set(pwm_tim12_ch2_timer "timer_id::none")
-    set(pwm_tim12_ch2_channel "channel_id::none")
+if(pwm_app_binding_count GREATER 0)
+    math(EXPR pwm_app_binding_last "${pwm_app_binding_count} - 1")
+    foreach(index RANGE 0 ${pwm_app_binding_last})
+        string(JSON role MEMBER "${params_json}" bindings pwm_channels ${index})
+        _pnx_cpp_identifier("${role}" role_ident)
+        if(NOT role_ident STREQUAL role)
+            message(FATAL_ERROR "PWM role '${role}' must be a C++ identifier")
+        endif()
+        string(JSON timer GET "${params_json}" bindings pwm_channels ${role} timer)
+        string(JSON channel_number GET "${params_json}" bindings pwm_channels ${role} channel)
+        string(TOUPPER "${timer}" timer)
+        set(resource "${timer}_CH${channel_number}")
+        list(FIND PNX_IOC_PWM_CHANNELS "${resource}" resource_index)
+        if(resource_index LESS 0)
+            message(FATAL_ERROR "PWM role '${role}' uses ${resource}, which is not configured for PWM in the IOC")
+        endif()
+        string(TOLOWER "${resource}" channel_ident)
+        string(APPEND pwm_app_binding_body
+            "inline constexpr bsp::pwm::channel ${role_ident} = bsp::pwm::channel::${channel_ident}${generated_semicolon_token}\n")
+    endforeach()
 endif()
-set(pwm_channel_count 2)
-set(pwm_timer_clock_hz 240000000)
-set(pwm_config_cpp
-    "{ ${pwm_tim3_ch4_enabled}, ${pwm_tim3_ch4_timer}, ${pwm_tim3_ch4_channel}, ${pwm_timer_clock_hz}U }, { ${pwm_tim12_ch2_enabled}, ${pwm_tim12_ch2_timer}, ${pwm_tim12_ch2_channel}, ${pwm_timer_clock_hz}U }")
+
+set(adc_channel_enum_entries "")
+set(adc_binding_cases "")
+set(adc_channel_index 0)
+foreach(entry ${PNX_IOC_ADC_BLOCKING_CHANNELS})
+    if(NOT entry MATCHES "^(ADC[0-9]+)_CH([0-9]+)\\|([^|]+)\\|([^|]+)$")
+        message(FATAL_ERROR "Invalid discovered ADC blocking channel ${entry}")
+    endif()
+    set(adc "${CMAKE_MATCH_1}")
+    set(adc_channel_number "${CMAKE_MATCH_2}")
+    set(adc_rank "${CMAKE_MATCH_3}")
+    set(adc_sampling_time "${CMAKE_MATCH_4}")
+    string(TOLOWER "${adc}_ch${adc_channel_number}" adc_channel_ident)
+    string(TOLOWER "${adc}" adc_lower)
+    if(NOT adc_channel_enum_entries STREQUAL "")
+        string(APPEND adc_channel_enum_entries ", ")
+    endif()
+    string(APPEND adc_channel_enum_entries "${adc_channel_ident} = ${adc_channel_index}")
+    string(APPEND adc_binding_cases
+        "    case channel::${adc_channel_ident}: out = { &h${adc_lower}, ADC_CHANNEL_${adc_channel_number}, ${adc_rank}, ${adc_sampling_time} }${generated_semicolon_token} return true${generated_semicolon_token}\n")
+    math(EXPR adc_channel_index "${adc_channel_index} + 1")
+endforeach()
+list(LENGTH PNX_IOC_ADC_BLOCKING_CHANNELS adc_channel_count)
+
+set(adc_app_binding_body "")
+string(JSON adc_app_binding_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings adc_channels)
+if(json_err)
+    set(adc_app_binding_count 0)
+endif()
+if(adc_app_binding_count GREATER 0)
+    math(EXPR adc_app_binding_last "${adc_app_binding_count} - 1")
+    foreach(index RANGE 0 ${adc_app_binding_last})
+        string(JSON role MEMBER "${params_json}" bindings adc_channels ${index})
+        _pnx_cpp_identifier("${role}" role_ident)
+        if(NOT role_ident STREQUAL role)
+            message(FATAL_ERROR "ADC role '${role}' must be a C++ identifier")
+        endif()
+        string(JSON adc GET "${params_json}" bindings adc_channels ${role} adc)
+        string(JSON adc_channel_number GET "${params_json}" bindings adc_channels ${role} channel)
+        string(TOUPPER "${adc}" adc)
+        set(resource "${adc}_CH${adc_channel_number}")
+        set(resource_found FALSE)
+        foreach(entry ${PNX_IOC_ADC_BLOCKING_CHANNELS})
+            if(entry MATCHES "^${resource}\\|")
+                set(resource_found TRUE)
+            endif()
+        endforeach()
+        if(NOT resource_found)
+            message(FATAL_ERROR
+                "ADC role '${role}' uses ${resource}, which is not an IOC single regular conversion")
+        endif()
+        string(TOLOWER "${resource}" adc_channel_ident)
+        string(APPEND adc_app_binding_body
+            "inline constexpr bsp::adc::channel ${role_ident} = bsp::adc::channel::${adc_channel_ident}${generated_semicolon_token}\n")
+    endforeach()
+endif()
 
 pnx_ioc_uart_index("${PNX_IOC_UART_HW}" "${remoter_uart}" dr16_port_idx)
 pnx_ioc_uart_index("${PNX_IOC_UART_HW}" "${remoter_uart}" ps2_port_idx)
@@ -377,15 +558,18 @@ endif()
 set(test_report_binding "${test_report_uart}")
 
 # --- params namespace (explicit keys per section) ---
-set(generated_semicolon_token "__PNX_GENERATED_SEMICOLON__")
-
 function(_pnx_param_float section key out_var)
     string(JSON val ERROR_VARIABLE err GET "${params_json}" ${section} ${key})
     if(err)
         set(${out_var} "" PARENT_SCOPE)
         return()
     endif()
-    set(${out_var} "  inline constexpr float ${key} = ${val}f${generated_semicolon_token}\n" PARENT_SCOPE)
+    if(val MATCHES "[.eE]")
+        set(literal "${val}f")
+    else()
+        set(literal "${val}.0f")
+    endif()
+    set(${out_var} "  inline constexpr float ${key} = ${literal}${generated_semicolon_token}\n" PARENT_SCOPE)
 endfunction()
 
 function(_pnx_param_uint section key out_var)
@@ -492,6 +676,7 @@ if(_line STREQUAL "")
     set(_line "  inline constexpr std::uint32_t sample_period_ms = 1000${generated_semicolon_token}\n")
 endif()
 string(APPEND params_can_diag_body "${_line}")
+
 _pnx_param_uint("can_diag" "window_size" _line)
 if(_line STREQUAL "")
     set(_line "  inline constexpr std::uint32_t window_size = 60${generated_semicolon_token}\n")
@@ -518,6 +703,7 @@ file(MAKE_DIRECTORY "${OUT_DIR}")
 
 set(CONFIG_HPP "${OUT_DIR}/config.hpp")
 set(ROBOT_CONFIG_HPP "${OUT_DIR}/robot_config.hpp")
+set(BSP_BINDINGS_CPP "${OUT_DIR}/bsp_bindings.cpp")
 
 file(WRITE "${CONFIG_HPP}"
 "#pragma once\n"
@@ -537,8 +723,7 @@ file(WRITE "${CONFIG_HPP}"
 "#define HAS_REFEREE ${HAS_REFEREE}\n"
 "#define HAS_UI ${HAS_UI}\n"
 "#define HAS_LED ${HAS_LED}\n"
-"#define HAS_PWM_TIM3_CH4 ${HAS_PWM_TIM3_CH4}\n"
-"#define HAS_PWM_TIM12_CH2 ${HAS_PWM_TIM12_CH2}\n"
+"${pwm_feature_macros}"
 "#define HAS_MOTORS ${HAS_MOTORS}\n"
 "#define CAN_DIAG_ENABLED ${CAN_DIAG_ENABLED}\n"
 "#define MOTOR_DJI ${MOTOR_DJI_C}\n"
@@ -557,8 +742,7 @@ file(WRITE "${CONFIG_HPP}"
 "inline constexpr bool has_referee = ${HAS_REFEREE};\n"
 "inline constexpr bool has_ui = ${HAS_UI};\n"
 "inline constexpr bool has_led = ${HAS_LED};\n"
-"inline constexpr bool has_pwm_tim3_ch4 = ${HAS_PWM_TIM3_CH4};\n"
-"inline constexpr bool has_pwm_tim12_ch2 = ${HAS_PWM_TIM12_CH2};\n"
+"${pwm_feature_constants}"
 "inline constexpr bool has_motors = ${HAS_MOTORS};\n"
 "inline constexpr bool motor_dji = ${MOTOR_DJI_C};\n"
 "inline constexpr bool motor_dm = ${MOTOR_DM_C};\n"
@@ -597,19 +781,31 @@ file(WRITE "${CONFIG_HPP}"
 "inline constexpr std::size_t bus_count = ${spi_bus_count};\n"
 "inline constexpr std::array<bus_config, bus_count> configs = {{ ${spi_config_cpp} }};\n\n"
 "} // namespace spi\n\n"
+"namespace gpio {\n\n"
+"enum class port_id : std::uint8_t { none = 0, a, b, c, d, e, f, g, h, i, j, k }${generated_semicolon_token}\n"
+"enum class active_level : std::uint8_t { low = 0, high = 1 }${generated_semicolon_token}\n"
+"enum class input : std::uint8_t { ${gpio_input_enum_entries} }${generated_semicolon_token}\n"
+"enum class output : std::uint8_t { ${gpio_output_enum_entries} }${generated_semicolon_token}\n\n"
+"struct input_config { port_id port${generated_semicolon_token} std::uint8_t pin${generated_semicolon_token} active_level active${generated_semicolon_token} }${generated_semicolon_token}\n"
+"struct output_config { port_id port${generated_semicolon_token} std::uint8_t pin${generated_semicolon_token} active_level active${generated_semicolon_token} }${generated_semicolon_token}\n\n"
+"inline constexpr std::size_t input_count = ${gpio_input_count}${generated_semicolon_token}\n"
+"inline constexpr std::size_t output_count = ${gpio_output_count}${generated_semicolon_token}\n"
+"inline constexpr std::array<input_config, input_count> input_configs = {{ ${gpio_input_config_cpp} }}${generated_semicolon_token}\n"
+"inline constexpr std::array<output_config, output_count> output_configs = {{ ${gpio_output_config_cpp} }}${generated_semicolon_token}\n\n"
+"} // namespace gpio\n\n"
 "namespace pwm {\n\n"
-"enum class timer_id : std::uint8_t { none = 0, tim3, tim12 };\n"
-"enum class channel_id : std::uint8_t { none = 0, ch1, ch2, ch3, ch4 };\n\n"
+"enum class channel : std::uint8_t { ${pwm_channel_enum_entries} }${generated_semicolon_token}\n\n"
 "struct channel_config\n"
 "{\n"
-"    bool enabled = false;\n"
-"    timer_id timer = timer_id::none;\n"
-"    channel_id channel = channel_id::none;\n"
 "    std::uint32_t timer_clock_hz = 0;\n"
 "};\n\n"
 "inline constexpr std::size_t channel_count = ${pwm_channel_count};\n"
 "inline constexpr std::array<channel_config, channel_count> configs = {{ ${pwm_config_cpp} }};\n\n"
 "} // namespace pwm\n\n"
+"namespace adc {\n\n"
+"enum class channel : std::uint8_t { ${adc_channel_enum_entries} }${generated_semicolon_token}\n"
+"inline constexpr std::size_t channel_count = ${adc_channel_count}${generated_semicolon_token}\n\n"
+"} // namespace adc\n\n"
 "namespace usart {\n\n"
 "using port = std::size_t;\n\n"
 "enum class handle_id : std::uint8_t { none = 0, uart5, uart7, usart1, usart10 };\n\n"
@@ -634,6 +830,15 @@ file(WRITE "${CONFIG_HPP}"
 "inline constexpr bsp::usart::port referee = ${referee_binding};\n"
 "inline constexpr bsp::usart::port test_report = ${test_report_binding};\n\n"
 "} // namespace uart\n"
+"\nnamespace gpio {\n\n"
+"${gpio_input_binding_body}${gpio_output_binding_body}"
+"\n} // namespace gpio\n"
+"\nnamespace pwm {\n\n"
+"${pwm_app_binding_body}"
+"\n} // namespace pwm\n"
+"\nnamespace adc {\n\n"
+"${adc_app_binding_body}"
+"\n} // namespace adc\n"
 "} // namespace app\n\n"
 "namespace params::ahrs {\n"
 "${params_ahrs_body}"
@@ -660,18 +865,36 @@ file(WRITE "${CONFIG_HPP}" "${config_hpp_fixed}")
 
 message(STATUS "Generated ${CONFIG_HPP}")
 
-function(_pnx_cpp_identifier input out_var)
-    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" ident "${input}")
-    string(REGEX REPLACE "_+" "_" ident "${ident}")
-    string(REGEX REPLACE "^_+|_+$" "" ident "${ident}")
-    if(ident STREQUAL "")
-        set(ident "unnamed")
-    endif()
-    if(ident MATCHES "^[0-9]")
-        set(ident "_${ident}")
-    endif()
-    set(${out_var} "${ident}" PARENT_SCOPE)
-endfunction()
+file(WRITE "${BSP_BINDINGS_CPP}"
+"// Generated from board/board.ioc. Do not edit.\n\n"
+"#include \"bsp_adc.hpp\"\n"
+"#include \"bsp_pwm.hpp\"\n"
+"#include \"adc.h\"\n"
+"#include \"tim.h\"\n\n"
+"namespace bsp::pwm::detail {\n\n"
+"bool binding_for(channel channel_id, binding& out) noexcept\n"
+"{\n"
+"    switch (channel_id)\n"
+"    {\n"
+"${pwm_binding_cases}"
+"    default: return false${generated_semicolon_token}\n"
+"    }\n"
+"}\n\n"
+"} // namespace bsp::pwm::detail\n\n"
+"namespace bsp::adc::detail {\n\n"
+"bool binding_for(channel channel_id, binding& out) noexcept\n"
+"{\n"
+"    switch (channel_id)\n"
+"    {\n"
+"${adc_binding_cases}"
+"    default: return false${generated_semicolon_token}\n"
+"    }\n"
+"}\n\n"
+"} // namespace bsp::adc::detail\n")
+file(READ "${BSP_BINDINGS_CPP}" bsp_bindings_raw)
+string(REPLACE "${generated_semicolon_token}" ";" bsp_bindings_fixed "${bsp_bindings_raw}")
+file(WRITE "${BSP_BINDINGS_CPP}" "${bsp_bindings_fixed}")
+message(STATUS "Generated ${BSP_BINDINGS_CPP}")
 
 function(_pnx_motor_type_flag model out_var)
     string(TOLOWER "${model}" model_lower)

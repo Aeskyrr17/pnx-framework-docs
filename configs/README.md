@@ -16,6 +16,10 @@
 | `build.motors.lk` | bool | `false` | 是否启用 LK 电机相关构建开关。 |
 | `bindings.remoter_uart` | string | `uart5` | 遥控器串口，例如 `uart5` 或 `usart10`；需要与 `board.ioc` 中存在且有 RX DMA 的 UART 名称一致。 |
 | `bindings.referee_uart` | string | `usart1` | 裁判系统串口，需要与 `board.ioc` 中存在的 UART 名称一致。 |
+| `bindings.gpio_inputs.<name>` | object | 无 | 可选 GPIO 输入绑定，填写 `pin` 和 `active_level`。 |
+| `bindings.gpio_outputs.<name>` | object | 无 | 可选 GPIO 输出绑定，填写 `pin` 和 `active_level`。 |
+| `bindings.pwm_channels.<name>` | object | 无 | 可选 PWM 语义绑定，填写 `timer` 和 `channel`。 |
+| `bindings.adc_channels.<name>` | object | 无 | 可选 ADC 语义绑定，填写 `adc` 和 `channel`。 |
 | `can.<fdcan>.id_type` | string | IOC 推导 | 指定某路 CAN 接收过滤 ID 类型，可选 `standard` 或 `extended`。例如 `can.fdcan1.id_type`。手动配置优先于 IOC 推导。 |
 | `ahrs.imu_offset_x` | number | `0.0` | IMU X 轴安装偏置。 |
 | `ahrs.imu_thread_priority` | number | `3` | AHRS/IMU 线程优先级。 |
@@ -34,6 +38,44 @@
 | `usb.read_thread_priority` | number | `5` | USB CDC 读线程优先级。 |
 | `usb.write_thread_priority` | number | `5` | USB CDC 写线程优先级。 |
 | `usb.period_ticks` | number | `2` | USB CDC 周期 tick 数。 |
+
+### GPIO、PWM 与 ADC 最小用法
+
+先在 `board/board.ioc` 中配置对应 GPIO 模式、PWM 通道或单次常规 ADC 通道。只有应用需要语义名称时，才在 `bindings` 中添加相应条目；未使用的分组可以省略。
+
+```json
+{
+  "bindings": {
+    "gpio_inputs": {
+      "limit_switch": { "pin": "pe10", "active_level": "low" }
+    },
+    "gpio_outputs": {
+      "status_output": { "pin": "pc13", "active_level": "high" }
+    },
+    "pwm_channels": {
+      "heater": { "timer": "tim3", "channel": 4 }
+    },
+    "adc_channels": {
+      "supply_voltage": { "adc": "adc1", "channel": 4 }
+    }
+  }
+}
+```
+
+重新运行 CMake 配置后，可以使用 `app::gpio::limit_switch`、`app::gpio::status_output`、`app::pwm::heater` 和 `app::adc::supply_voltage` 调用对应 BSP 接口。名称必须是合法的 C++ 标识符，硬件资源必须与 IOC 配置一致。
+
+DR16 的最小配置如下：
+
+```json
+{
+  "bindings": {
+    "remoter_uart": "uart5"
+  },
+  "remoter": {
+    "source": "dr16"
+  }
+}
+```
 
 选择 PS2 时的最小配置如下：
 

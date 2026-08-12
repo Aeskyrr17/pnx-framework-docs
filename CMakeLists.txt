@@ -89,6 +89,7 @@ add_subdirectory(board/cmake/stm32cubemx)
 target_sources(${PROJECT_NAME} PRIVATE
     ${PNX_EMBEDDED_SOURCES}
     ${CMSIS_DSP_SOURCES}
+    "${PNX_EMBEDDED_GENERATED_DIR}/bsp_bindings.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
