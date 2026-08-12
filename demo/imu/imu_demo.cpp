@@ -4,11 +4,17 @@
 #include "config.hpp"
 #include "demo_debug.hpp"
 #include "msg.hpp"
+#include "robot_config.hpp"
 
 #include "tx_api.h"
 
 #include <cmath>
 #include <cstring>
+
+extern "C" {
+demo::imu::dmimu_debug_state dmimu_demo_debug{};
+float dmimu_yaw_debug=0.0f;
+}
 
 namespace demo::imu
 {
@@ -43,6 +49,9 @@ TX_THREAD monitor_thread{};
 alignas(8) std::uint8_t monitor_stack[1024]{};
 bool monitor_started = false;
 msg::subscriber ahrs_sub{};
+#if HAS_DMIMU
+msg::subscriber dmimu_sub{};
+#endif
 ULONG started_at = 0;
 std::uint32_t observed_count = 0;
 
@@ -55,6 +64,67 @@ bool quaternion_valid(const ahrs::message& data) noexcept
         data.quaternion[3] * data.quaternion[3];
     return std::isfinite(norm) && norm > 0.8f && norm < 1.2f;
 }
+
+#if HAS_DMIMU
+float quaternion_norm(const float quaternion[4]) noexcept
+{
+    return std::sqrt(quaternion[0] * quaternion[0] +
+                     quaternion[1] * quaternion[1] +
+                     quaternion[2] * quaternion[2] +
+                     quaternion[3] * quaternion[3]);
+}
+
+void capture_dmimu_message(const ahrs::dmimu_message& data) noexcept
+{
+    auto& debug = dmimu_demo_debug;
+    debug.message_received = true;
+    debug.online = data.online;
+    ++debug.received_count;
+    if (!data.online)
+    {
+        ++debug.offline_message_count;
+    }
+    debug.sequence = data.sequence;
+    debug.received_tick = data.received_tick;
+    debug.last_debug_tick = tx_time_get();
+    debug.message_age_ticks = debug.last_debug_tick - data.received_tick;
+    std::memcpy(debug.quaternion, data.quaternion, sizeof(debug.quaternion));
+    debug.quaternion_norm = quaternion_norm(data.quaternion);
+    debug.quaternion_valid = data.online && std::isfinite(debug.quaternion_norm) &&
+                             debug.quaternion_norm > 0.8f && debug.quaternion_norm < 1.2f;
+    debug.yaw = data.yaw;
+    debug.pitch = data.pitch;
+    debug.roll = data.roll;
+    debug.gyro[0] = data.gyro_r;
+    debug.gyro[1] = data.gyro_p;
+    debug.gyro[2] = data.gyro_y;
+    std::memcpy(debug.accel, data.accel, sizeof(debug.accel));
+    dmimu_yaw_debug = data.yaw;
+}
+
+void capture_dmimu_diagnostics() noexcept
+{
+    auto& debug = dmimu_demo_debug;
+    const auto& service_diag = ahrs::dmimu_service::instance().diagnostics();
+    debug.service_initialized = service_diag.initialized;
+    debug.online = service_diag.online;
+    debug.processed_frame_count = service_diag.processed_frame_count;
+    debug.publish_count = service_diag.publish_count;
+    debug.publish_error_count = service_diag.publish_error_count;
+    debug.request_error_count = service_diag.request_error_count;
+    debug.complete_snapshot_count = service_diag.device.complete_snapshot_count;
+    debug.rx_queue_drop_count = service_diag.device.rx_queue_drop_count;
+    debug.rx_invalid_length_count = service_diag.device.rx_invalid_length_count;
+    debug.rx_invalid_frame_count = service_diag.device.rx_invalid_frame_count;
+    debug.device_offline_event_count = service_diag.device.offline_event_count;
+    debug.device_reconnect_count = service_diag.device.reconnect_count;
+    debug.last_debug_tick = tx_time_get();
+    if (debug.message_received)
+    {
+        debug.message_age_ticks = debug.last_debug_tick - debug.received_tick;
+    }
+}
+#endif
 
 float wrap_angle(float angle) noexcept
 {
@@ -163,6 +233,9 @@ void sync_debug(const ahrs::message& data, std::uint32_t stages, bool timed_out)
 void monitor_entry(ULONG /*arg*/)
 {
     ahrs::message data{};
+#if HAS_DMIMU
+    ahrs::dmimu_message dmimu_data{};
+#endif
     std::uint32_t stages = service_initialized | subscriber_created | monitor_thread_started;
     for (;;)
     {
@@ -171,6 +244,20 @@ void monitor_entry(ULONG /*arg*/)
             stages |= data_received;
             ++observed_count;
         }
+#if HAS_DMIMU
+        if (msg::available(dmimu_sub))
+        {
+            if (msg::read(dmimu_sub, dmimu_data) == types::status::ok)
+            {
+                capture_dmimu_message(dmimu_data);
+            }
+            else
+            {
+                ++dmimu_demo_debug.read_error_count;
+            }
+        }
+        capture_dmimu_diagnostics();
+#endif
         sync_debug(data, stages, (tx_time_get() - started_at) > warmup_ticks);
         tx_thread_sleep(monitor_period_ticks);
     }
@@ -186,6 +273,10 @@ void run() noexcept
     state.total_count = 5U;
     observed_count = 0;
     started_at = tx_time_get();
+    dmimu_demo_debug = {};
+#if HAS_DMIMU
+    dmimu_demo_debug.compiled_enabled = true;
+#endif
 
     ahrs::config cfg{};
     cfg.imu_offset_x = params::ahrs::imu_offset_x;
@@ -201,6 +292,40 @@ void run() noexcept
         state.passed = false;
         return;
     }
+
+#if HAS_DMIMU
+    ::imu::dmimu::config dmimu_cfg{};
+    dmimu_cfg.transport = robot::imu::dmimu;
+    dmimu_cfg.runtime.communication_mode =
+        params::dmimu::mode == params::dmimu::communication_mode::active
+            ? ::imu::dmimu::mode::active
+            : ::imu::dmimu::mode::request;
+    dmimu_cfg.runtime.offline_timeout_ticks = params::dmimu::offline_timeout_ticks;
+
+    ahrs::dmimu_service_config dmimu_service_cfg{};
+    dmimu_service_cfg.thread_priority = params::dmimu::thread_priority;
+    dmimu_service_cfg.receive_wait_ticks = params::dmimu::receive_wait_ticks;
+    dmimu_service_cfg.request_period_ticks = params::dmimu::request_period_ticks;
+
+    if (!ahrs::dmimu_service::instance().init(dmimu_cfg, dmimu_service_cfg))
+    {
+        state.failure_mask = service_init_failed;
+        state.failed_count = 1U;
+        state.passed = false;
+        return;
+    }
+    dmimu_demo_debug.service_initialized = true;
+
+    dmimu_sub = msg::subscribe<ahrs::dmimu_message>();
+    dmimu_demo_debug.subscriber_created = dmimu_sub.valid();
+    if (!dmimu_sub.valid())
+    {
+        state.failure_mask = subscribe_failed;
+        state.failed_count = 1U;
+        state.passed = false;
+        return;
+    }
+#endif
 
     ahrs_sub = msg::subscribe<ahrs::message>();
     if (!ahrs_sub.valid())

@@ -53,6 +53,10 @@ if(NOT ENABLE_USBX)
     list(FILTER PNX_EMBEDDED_SOURCES EXCLUDE REGEX "[/\\\\]pnx_bsp[/\\\\]usb[/\\\\]")
 endif()
 
+if(NOT HAS_DMIMU)
+    list(FILTER PNX_EMBEDDED_SOURCES EXCLUDE REGEX "[/\\\\]pnx_devices[/\\\\]imu[/\\\\]dmimu[/\\\\]")
+endif()
+
 file(GLOB_RECURSE PNX_EMBEDDED_HEADERS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_bsp/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_bsp/*.hpp"
@@ -64,6 +68,10 @@ file(GLOB_RECURSE PNX_EMBEDDED_HEADERS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_libs/*.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/demo/*.hpp"
 )
+
+if(NOT HAS_DMIMU)
+    list(FILTER PNX_EMBEDDED_HEADERS EXCLUDE REGEX "[/\\\\]pnx_devices[/\\\\]imu[/\\\\]dmimu[/\\\\]")
+endif()
 
 set(PNX_EMBEDDED_INCLUDE_DIRS)
 foreach(header IN LISTS PNX_EMBEDDED_HEADERS)

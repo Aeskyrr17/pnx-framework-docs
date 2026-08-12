@@ -25,6 +25,11 @@
 | `ahrs.imu_thread_priority` | number | `3` | AHRS/IMU 线程优先级。 |
 | `ahrs.temp_thread_priority` | number | `4` | IMU 温控线程优先级。 |
 | `ahrs.target_temp` | number | `45.0` | IMU 目标温度。 |
+| `dmimu.communication_mode` | string | `active` | DMIMU 运行模式：`active` 只接收外部预配置的四类主动数据；`request` 周期请求四类数据。 |
+| `dmimu.offline_timeout_ticks` | number | `100` | 超过该时间没有形成完整四帧快照时判定 DMIMU 掉线。 |
+| `dmimu.thread_priority` | number | `3` | DMIMU 服务线程优先级。 |
+| `dmimu.receive_wait_ticks` | number | `1` | DMIMU 服务线程等待接收队列的 tick 数，必须大于 0。 |
+| `dmimu.request_period_ticks` | number | `1` | 请求模式的请求周期；仅在 `request` 模式下要求大于 0。 |
 | `remoter.source` | string | 空 | 遥控器来源，可选 `dr16`、`vt03` 或 `ps2`。 |
 | `remoter.thread_priority` | number | `2` | 遥控器线程优先级。 |
 | `remoter.rx_timeout_ticks` | number | `100` | 遥控器接收超时 tick 数。 |
@@ -122,13 +127,45 @@ PS2 UART 协议和按键位序以 [YFROBOT PS2 UART 说明书](https://pjfcckenl
 切换 `remoter.source` 后需要重新运行 CMake configure/build，并让 Cortex-Debug
 重新加载最新 ELF。非 PS2 固件中 Live Watch 找不到 `ps2_` 字段属于正常现象。
 
-注意：`ahrs`、`referee`、`test`、`usb` 这些分组在生成脚本中按“整组缺省”补默认值。如果某个分组里只填写一部分字段，未填写的字段不会生成，使用时应保持同组字段完整。`remoter` 分组的字段支持逐项缺省。
+注意：`ahrs`、`referee`、`test`、`usb` 这些分组在生成脚本中按“整组缺省”补默认值。如果某个分组里只填写一部分字段，未填写的字段不会生成，使用时应保持同组字段完整。`dmimu` 和 `remoter` 分组的字段支持逐项缺省。
 
 CAN 的 `id_type` 只表示标准帧 ID 或扩展帧 ID，不表示 CAN Classic 或 CAN FD。CAN Classic/FD 仍由 `board.ioc` 的 `FDCANx.FrameFormat` 推导；`can.<fdcan>.id_type` 只控制生成到 `config::can::filter_id_types` 的标准/扩展过滤类型。
 
 ## robot.json
 
-`robot.json` 描述机器人设备树，目前主要包含电机配置。
+`robot.json` 描述机器人设备树，包含可选 IMU 与电机配置。
+
+### `devices.dmimu`
+
+`devices.dmimu` 整个对象缺失时，或 `enabled` 缺失/为 `false` 时，生成器默认不使用 DMIMU：生成 `HAS_DMIMU=0`，并从 CMake 源文件和头文件列表中排除 `pnx_devices/imu/dmimu`。只有显式配置 `enabled: true` 才会生成并启动 DMIMU 服务。
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `enabled` | bool | 是 | `false` | 是否编译并启动 DMIMU。 |
+| `can_bus` | string | 启用时是 | 无 | CAN 外设，例如 `fdcan3`，必须存在于 `board.ioc`。 |
+| `can_type` | string | 启用时是 | 无 | DMIMU 当前只接受 `classic`，并会校验 IOC 中该总线同样为 Classic CAN。 |
+| `can_id` | string/number | 启用时是 | 无 | 向 DMIMU 发送命令使用的 ID，范围 `0x00..0xFF`。 |
+| `master_id` | string/number | 启用时是 | 无 | DMIMU 返回数据使用的 ID，范围 `0x00..0xFF`。 |
+
+示例：
+
+```json
+{
+  "devices": {
+    "dmimu": {
+      "enabled": true,
+      "can_bus": "fdcan3",
+      "can_type": "classic",
+      "can_id": "0x04",
+      "master_id": "0x04"
+    }
+  }
+}
+```
+
+生成结果为 `config::feature::has_dmimu`、`HAS_DMIMU` 和纯连接配置 `robot::imu::dmimu`。运行模式及线程参数由 `params::dmimu` 提供，`demo::imu::run()` 只在 `HAS_DMIMU=1` 时组装两类配置并调用 `ahrs::dmimu_service::init()`；没有该字段的旧配置不会引用 DMIMU 代码。
+
+主动模式是部署前置条件：DMIMU 必须通过外部工具预先设置为主动发送加速度、角速度、欧拉角和四元数。固件不会修改其通信模式、输出选择或持久参数。
 
 ### `devices.motors.dm`
 

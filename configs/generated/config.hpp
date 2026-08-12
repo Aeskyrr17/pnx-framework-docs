@@ -1,5 +1,5 @@
 #pragma once
-// Generated from board/board.ioc + config/params.json. Do not edit.
+// Generated from board/board.ioc + configs/params.json + configs/robot.json. Do not edit.
 
 #include <array>
 #include <cstddef>
@@ -8,6 +8,7 @@
 #define HW_HAS_USB 1
 #define ENABLE_USBX 1
 #define HAS_AHRS 1
+#define HAS_DMIMU 1
 #define HAS_REMOTER 1
 #define HAS_VT03 1
 #define HAS_PS2 1
@@ -30,6 +31,7 @@ namespace config::feature {
 inline constexpr bool hw_has_usb = 1;
 inline constexpr bool enable_usbx = 1;
 inline constexpr bool has_ahrs = 1;
+inline constexpr bool has_dmimu = 1;
 inline constexpr bool has_remoter = 1;
 inline constexpr bool has_vt03 = 1;
 inline constexpr bool has_ps2 = 1;
@@ -191,6 +193,15 @@ namespace params::ahrs {
   inline constexpr float target_temp = 45.0f;
 } // namespace params::ahrs
 
+namespace params::dmimu {
+enum class communication_mode : std::uint8_t { request = 0, active };
+inline constexpr communication_mode mode = communication_mode::active;
+inline constexpr std::uint32_t offline_timeout_ticks = 100U;
+inline constexpr std::uint32_t thread_priority = 3U;
+inline constexpr std::uint32_t receive_wait_ticks = 1U;
+inline constexpr std::uint32_t request_period_ticks = 1U;
+} // namespace params::dmimu
+
 namespace params::remoter {
   inline constexpr std::uint32_t thread_priority = 2;
   inline constexpr std::uint32_t rx_timeout_ticks = 100;
@@ -205,7 +216,7 @@ namespace params::referee {
 
 namespace params::test {
   inline constexpr std::uint32_t thread_priority = 10;
-  inline constexpr bool auto_run_on_boot = true;
+  inline constexpr bool auto_run_on_boot = false;
 } // namespace params::test
 
 namespace params::usb {
