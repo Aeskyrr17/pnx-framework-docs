@@ -72,6 +72,32 @@ _pnx_json_bool_to_cmake("${motor_dji}" MOTOR_DJI)
 _pnx_json_bool_to_cmake("${motor_dm}" MOTOR_DM)
 _pnx_json_bool_to_cmake("${motor_lk}" MOTOR_LK)
 
+# --- robot.json: optional DMIMU build switch ---
+# Absence of devices.dmimu, or absence/false value of its enabled member,
+# deliberately disables DMIMU. This keeps legacy robot files opt-in.
+set(robot_json "")
+set(HAS_DMIMU 0)
+if(DEFINED ROBOT_CONFIG AND EXISTS "${ROBOT_CONFIG}")
+    file(READ "${ROBOT_CONFIG}" robot_json)
+    string(JSON robot_dmimu_type ERROR_VARIABLE json_err TYPE "${robot_json}" devices dmimu)
+    if(NOT json_err)
+        if(NOT robot_dmimu_type STREQUAL "OBJECT")
+            message(FATAL_ERROR "robot devices.dmimu must be an object")
+        endif()
+        string(JSON robot_dmimu_enabled_type ERROR_VARIABLE json_err TYPE "${robot_json}" devices dmimu enabled)
+        if(NOT json_err AND NOT robot_dmimu_enabled_type STREQUAL "BOOLEAN")
+            message(FATAL_ERROR "robot devices.dmimu.enabled must be a boolean")
+        endif()
+        string(JSON robot_dmimu_enabled ERROR_VARIABLE json_err GET "${robot_json}" devices dmimu enabled)
+        if(NOT json_err)
+            _pnx_json_bool_to_cmake("${robot_dmimu_enabled}" robot_dmimu_enabled_cmake)
+            if(robot_dmimu_enabled_cmake)
+                set(HAS_DMIMU 1)
+            endif()
+        endif()
+    endif()
+endif()
+
 # --- params.json: bindings ---
 string(JSON remoter_uart ERROR_VARIABLE json_err GET "${params_json}" bindings remoter_uart)
 if(json_err)
@@ -611,6 +637,49 @@ if(params_ahrs_body STREQUAL "")
         "  inline constexpr float target_temp = 45.0f${generated_semicolon_token}\n")
 endif()
 
+string(JSON params_dmimu_mode ERROR_VARIABLE json_err GET "${params_json}" dmimu communication_mode)
+if(json_err OR params_dmimu_mode STREQUAL "")
+    set(params_dmimu_mode "active")
+endif()
+string(TOLOWER "${params_dmimu_mode}" params_dmimu_mode_lower)
+if(params_dmimu_mode_lower STREQUAL "active")
+    set(params_dmimu_mode_expr "communication_mode::active")
+elseif(params_dmimu_mode_lower STREQUAL "request")
+    set(params_dmimu_mode_expr "communication_mode::request")
+else()
+    message(FATAL_ERROR "params.dmimu.communication_mode must be active or request")
+endif()
+
+string(JSON params_dmimu_offline_timeout ERROR_VARIABLE json_err GET "${params_json}" dmimu offline_timeout_ticks)
+if(json_err OR params_dmimu_offline_timeout STREQUAL "")
+    set(params_dmimu_offline_timeout 100)
+endif()
+string(JSON params_dmimu_thread_priority ERROR_VARIABLE json_err GET "${params_json}" dmimu thread_priority)
+if(json_err OR params_dmimu_thread_priority STREQUAL "")
+    set(params_dmimu_thread_priority 3)
+endif()
+string(JSON params_dmimu_receive_wait ERROR_VARIABLE json_err GET "${params_json}" dmimu receive_wait_ticks)
+if(json_err OR params_dmimu_receive_wait STREQUAL "")
+    set(params_dmimu_receive_wait 1)
+endif()
+string(JSON params_dmimu_request_period ERROR_VARIABLE json_err GET "${params_json}" dmimu request_period_ticks)
+if(json_err OR params_dmimu_request_period STREQUAL "")
+    set(params_dmimu_request_period 1)
+endif()
+if(params_dmimu_offline_timeout LESS 1 OR params_dmimu_receive_wait LESS 1)
+    message(FATAL_ERROR "params.dmimu offline_timeout_ticks and receive_wait_ticks must be greater than zero")
+endif()
+if(params_dmimu_mode_lower STREQUAL "request" AND params_dmimu_request_period LESS 1)
+    message(FATAL_ERROR "params.dmimu.request_period_ticks must be greater than zero in request mode")
+endif()
+string(CONCAT params_dmimu_body
+    "enum class communication_mode : std::uint8_t { request = 0, active }${generated_semicolon_token}\n"
+    "inline constexpr communication_mode mode = ${params_dmimu_mode_expr}${generated_semicolon_token}\n"
+    "inline constexpr std::uint32_t offline_timeout_ticks = ${params_dmimu_offline_timeout}U${generated_semicolon_token}\n"
+    "inline constexpr std::uint32_t thread_priority = ${params_dmimu_thread_priority}U${generated_semicolon_token}\n"
+    "inline constexpr std::uint32_t receive_wait_ticks = ${params_dmimu_receive_wait}U${generated_semicolon_token}\n"
+    "inline constexpr std::uint32_t request_period_ticks = ${params_dmimu_request_period}U${generated_semicolon_token}\n")
+
 set(params_remoter_body "")
 _pnx_param_uint("remoter" "thread_priority" _line)
 if(_line STREQUAL "")
@@ -707,13 +776,14 @@ set(BSP_BINDINGS_CPP "${OUT_DIR}/bsp_bindings.cpp")
 
 file(WRITE "${CONFIG_HPP}"
 "#pragma once\n"
-"// Generated from board/board.ioc + config/params.json. Do not edit.\n\n"
+"// Generated from board/board.ioc + configs/params.json + configs/robot.json. Do not edit.\n\n"
 "#include <array>\n"
 "#include <cstddef>\n"
 "#include <cstdint>\n\n"
 "#define HW_HAS_USB ${HW_HAS_USB}\n"
 "#define ENABLE_USBX ${ENABLE_USBX_C}\n"
 "#define HAS_AHRS ${HAS_AHRS}\n"
+"#define HAS_DMIMU ${HAS_DMIMU}\n"
 "#define HAS_REMOTER ${HAS_REMOTER}\n"
 "#define HAS_VT03 ${HAS_VT03}\n"
 "#define HAS_PS2 ${HAS_PS2}\n"
@@ -733,6 +803,7 @@ file(WRITE "${CONFIG_HPP}"
 "inline constexpr bool hw_has_usb = ${HW_HAS_USB};\n"
 "inline constexpr bool enable_usbx = ${ENABLE_USBX_C};\n"
 "inline constexpr bool has_ahrs = ${HAS_AHRS};\n"
+"inline constexpr bool has_dmimu = ${HAS_DMIMU};\n"
 "inline constexpr bool has_remoter = ${HAS_REMOTER};\n"
 "inline constexpr bool has_vt03 = ${HAS_VT03};\n"
 "inline constexpr bool has_ps2 = ${HAS_PS2};\n"
@@ -843,6 +914,9 @@ file(WRITE "${CONFIG_HPP}"
 "namespace params::ahrs {\n"
 "${params_ahrs_body}"
 "} // namespace params::ahrs\n\n"
+"namespace params::dmimu {\n"
+"${params_dmimu_body}"
+"} // namespace params::dmimu\n\n"
 "namespace params::remoter {\n"
 "${params_remoter_body}"
 "} // namespace params::remoter\n\n"
@@ -965,9 +1039,61 @@ set(robot_has_other 0)
 set(robot_dm_id_base "0x01")
 set(robot_dm_master_id_base "0x05")
 set(robot_dm_max_motors "4")
+set(robot_dmimu_include "")
+set(robot_dmimu_body "// DMIMU is not enabled in the robot device tree.\n")
 
 if(DEFINED ROBOT_CONFIG AND EXISTS "${ROBOT_CONFIG}")
-    file(READ "${ROBOT_CONFIG}" robot_json)
+    if(HAS_DMIMU)
+        string(JSON robot_dmimu_can_bus ERROR_VARIABLE json_err GET "${robot_json}" devices dmimu can_bus)
+        if(json_err OR robot_dmimu_can_bus STREQUAL "")
+            message(FATAL_ERROR "enabled robot devices.dmimu requires can_bus")
+        endif()
+        string(JSON robot_dmimu_can_type ERROR_VARIABLE json_err GET "${robot_json}" devices dmimu can_type)
+        if(json_err OR robot_dmimu_can_type STREQUAL "")
+            message(FATAL_ERROR "enabled robot devices.dmimu requires can_type=classic")
+        endif()
+        string(JSON robot_dmimu_can_id ERROR_VARIABLE json_err GET "${robot_json}" devices dmimu can_id)
+        if(json_err OR robot_dmimu_can_id STREQUAL "")
+            message(FATAL_ERROR "enabled robot devices.dmimu requires can_id")
+        endif()
+        string(JSON robot_dmimu_master_id ERROR_VARIABLE json_err GET "${robot_json}" devices dmimu master_id)
+        if(json_err OR robot_dmimu_master_id STREQUAL "")
+            message(FATAL_ERROR "enabled robot devices.dmimu requires master_id")
+        endif()
+
+        string(TOLOWER "${robot_dmimu_can_bus}" robot_dmimu_can_bus_lower)
+        string(TOLOWER "${robot_dmimu_can_type}" robot_dmimu_can_type_lower)
+        pnx_ioc_hw_in_list("${PNX_IOC_FDCAN_HW}" "${robot_dmimu_can_bus_lower}" robot_dmimu_can_bus_present)
+        if(NOT robot_dmimu_can_bus_present)
+            message(FATAL_ERROR "robot DMIMU uses ${robot_dmimu_can_bus_lower}, but it is not present in ${IOC}")
+        endif()
+        if(NOT robot_dmimu_can_type_lower STREQUAL "classic")
+            message(FATAL_ERROR "robot DMIMU only supports can_type=classic")
+        endif()
+        pnx_ioc_fdcan_frame_format("${PNX_IOC_LINES}" "${robot_dmimu_can_bus_lower}" robot_dmimu_ioc_can_type)
+        if(NOT robot_dmimu_ioc_can_type STREQUAL "classic")
+            message(FATAL_ERROR "robot DMIMU requires ${robot_dmimu_can_bus_lower} to use Classic CAN in ${IOC}")
+        endif()
+
+        math(EXPR robot_dmimu_can_id_value "${robot_dmimu_can_id}")
+        math(EXPR robot_dmimu_master_id_value "${robot_dmimu_master_id}")
+        if(robot_dmimu_can_id_value LESS 0 OR robot_dmimu_can_id_value GREATER 255)
+            message(FATAL_ERROR "robot DMIMU can_id must be in the uint8 range 0x00..0xFF")
+        endif()
+        if(robot_dmimu_master_id_value LESS 0 OR robot_dmimu_master_id_value GREATER 255)
+            message(FATAL_ERROR "robot DMIMU master_id must be in the uint8 range 0x00..0xFF")
+        endif()
+
+        set(robot_dmimu_include "#include \"dmimu.hpp\"\n")
+        string(CONCAT robot_dmimu_body
+            "inline constexpr ::imu::dmimu::transport_config dmimu{\n"
+            "        bsp::can::bus::${robot_dmimu_can_bus_lower},\n"
+            "        bsp::can::bus_type::classic,\n"
+            "        ${robot_dmimu_can_id}U,\n"
+            "        ${robot_dmimu_master_id}U,\n"
+            "};\n")
+    endif()
+
     string(JSON robot_dm_id_base_json ERROR_VARIABLE json_err GET "${robot_json}" devices motors dm id_base)
     if(NOT json_err AND NOT robot_dm_id_base_json STREQUAL "")
         set(robot_dm_id_base "${robot_dm_id_base_json}")
@@ -1066,7 +1192,9 @@ endif()
 file(WRITE "${ROBOT_CONFIG_HPP}"
 "#pragma once\n"
 "// Generated from robot device tree. Do not edit.\n\n"
+"#include \"config.hpp\"\n"
 "#include \"motor.hpp\"\n\n"
+"${robot_dmimu_include}\n"
 "#include <cstddef>\n"
 "#include <cstdint>\n\n"
 "namespace robot::motors {\n\n"
@@ -1093,6 +1221,10 @@ file(WRITE "${ROBOT_CONFIG_HPP}"
 "inline constexpr std::size_t max_motors = ${robot_dm_max_motors};\n"
 "} // namespace dm\n\n"
 "${robot_motors_body}"
-"} // namespace robot::motors\n")
+"} // namespace robot::motors\n\n"
+"namespace robot::imu {\n\n"
+"inline constexpr bool has_dmimu = ${HAS_DMIMU};\n"
+"${robot_dmimu_body}"
+"\n} // namespace robot::imu\n")
 
 message(STATUS "Generated ${ROBOT_CONFIG_HPP}")
