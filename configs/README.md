@@ -186,7 +186,7 @@ CAN 的 `id_type` 只表示标准帧 ID 或扩展帧 ID，不表示 CAN Classic 
 | `can_bus` | string | 是 | CAN 外设名称，例如 `fdcan1`、`fdcan2`，必须存在于 `board.ioc`。 |
 | `can_type` | string | 是 | CAN 帧类型：`classic` 或 `fd`。 |
 | `can_id` | string/number | 是 | 电机基础 CAN ID，建议十六进制字符串，如 `0x01`。 |
-| `control_mode` | string | 否 | 电机初始控制模式，默认 `relax`；可选 `relax`、`torque`、`mit`、`pos_speed`、`speed`、`multi`。`velocity` 可作为 `speed` 的别名，`position_speed` 可作为 `pos_speed` 的别名。 |
+| `control_mode` | string | 否 | 电机初始控制模式，默认 `relax`；可选 `relax`、`current`、`torque`、`mit`、`pos_speed`、`speed`、`multi`。`velocity` 可作为 `speed` 的别名，`position_speed` 可作为 `pos_speed` 的别名。 |
 
 示例：
 
@@ -203,4 +203,4 @@ CAN 的 `id_type` 只表示标准帧 ID 或扩展帧 ID，不表示 CAN Classic 
 
 `control_mode` 会写入生成的 `motors::config`，电机对象构造时即设置到 `control_mode`。对于达妙电机，enable/disable/save-zero/clear-error 的控制帧 ID 会根据该模式选择基础 ID、`+0x100`、`+0x200` 或 `0x300`，因此需要在 enable 前通过配置确定。
 
-`model` 会生成 `<name>_model` 常量。例如 `name` 为 `motor2` 时会生成 `robot::motors::motor2_model`。demo 可以用这个常量在编译期选择具体 C++ 电机类。
+`model` 会生成 `<name>_model` 常量。例如 `name` 为 `motor2` 时会生成 `robot::motors::motor2_model`。装配代码可通过 device 层 `motortraits.hpp` 的 `model_type_t` 将其映射为具体 C++ 电机类型；handler 由 device 层 registry 根据 protocol 自动选择。

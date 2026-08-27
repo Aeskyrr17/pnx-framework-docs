@@ -989,6 +989,8 @@ function(_pnx_motor_control_mode_expr mode out_var)
     string(TOLOWER "${mode}" mode_lower)
     if(mode_lower STREQUAL "" OR mode_lower STREQUAL "relax")
         set(${out_var} "::motors::mode::relax" PARENT_SCOPE)
+    elseif(mode_lower STREQUAL "current")
+        set(${out_var} "::motors::mode::current" PARENT_SCOPE)
     elseif(mode_lower STREQUAL "torque")
         set(${out_var} "::motors::mode::torque" PARENT_SCOPE)
     elseif(mode_lower STREQUAL "mit")
@@ -1000,7 +1002,7 @@ function(_pnx_motor_control_mode_expr mode out_var)
     elseif(mode_lower STREQUAL "multi")
         set(${out_var} "::motors::mode::multi" PARENT_SCOPE)
     else()
-        message(FATAL_ERROR "robot motor control_mode must be relax, torque, mit, pos_speed, speed, or multi")
+        message(FATAL_ERROR "robot motor control_mode must be relax, current, torque, mit, pos_speed, speed, or multi")
     endif()
 endfunction()
 
@@ -1029,7 +1031,7 @@ function(_pnx_motor_model_expr model out_var)
     endif()
 endfunction()
 
-set(robot_motors_body "")
+set(robot_motor_configs_body "")
 set(robot_motor_count 0)
 set(robot_has_dji 0)
 set(robot_has_dm 0)
@@ -1171,7 +1173,7 @@ if(DEFINED ROBOT_CONFIG AND EXISTS "${ROBOT_CONFIG}")
                 set(robot_has_other 1)
             endif()
 
-            string(APPEND robot_motors_body
+            string(APPEND robot_motor_configs_body
                 "// ${motor_model}\n"
                 "inline constexpr model ${motor_ident}_model = ${motor_model_expr};\n"
                 "inline constexpr ::motors::config ${motor_ident}{\n"
@@ -1185,8 +1187,8 @@ if(DEFINED ROBOT_CONFIG AND EXISTS "${ROBOT_CONFIG}")
     endif()
 endif()
 
-if(robot_motors_body STREQUAL "")
-    set(robot_motors_body "// No motors are described in the robot device tree.\n")
+if(robot_motor_configs_body STREQUAL "")
+    set(robot_motor_configs_body "// No motors are described in the robot device tree.\n")
 endif()
 
 file(WRITE "${ROBOT_CONFIG_HPP}"
@@ -1220,7 +1222,7 @@ file(WRITE "${ROBOT_CONFIG_HPP}"
 "inline constexpr std::uint32_t master_id_base = ${robot_dm_master_id_base}U;\n"
 "inline constexpr std::size_t max_motors = ${robot_dm_max_motors};\n"
 "} // namespace dm\n\n"
-"${robot_motors_body}"
+"${robot_motor_configs_body}"
 "} // namespace robot::motors\n\n"
 "namespace robot::imu {\n\n"
 "inline constexpr bool has_dmimu = ${HAS_DMIMU};\n"
