@@ -2,7 +2,6 @@
 
 #include "demo_debug.hpp"
 #include "motor.hpp"
-#include "motorapi.hpp"
 #include "motorservice.hpp"
 #include "motortraits.hpp"
 #include "robot_config.hpp"
@@ -18,6 +17,7 @@ namespace devices
 
 namespace
 {
+    // Define the motor types based on the robot configuration.
     using motor1_type =
         ::robot::devices::motors::model_type_t<robot::motors::motor1_model>;
     using motor2_type =
@@ -25,9 +25,12 @@ namespace
     using motor3_type =
         ::robot::devices::motors::model_type_t<robot::motors::motor3_model>;
 
+    //create motor instances using motor types and robot configuration
     motor1_type motor1_device{robot::motors::motor1};
     motor2_type motor2_device{robot::motors::motor2};
     motor3_type motor3_device{robot::motors::motor3};
+
+    //create a motor service instance for all motors
     ::motors::motor_service service{};
     bool initialized = false;
 }
@@ -49,6 +52,7 @@ bool initialize() noexcept
     return true;
 }
 
+} // namespace devices
 
 namespace
 {
