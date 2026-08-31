@@ -75,6 +75,9 @@ void FDCAN3_IT0_IRQHandler(void);
 void TIM23_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
+void ADC_IRQHandler(void);
+void DMA2_Stream0_IRQHandler(void);
+
 /* USER CODE END EFP */
 
 #ifdef __cplusplus
