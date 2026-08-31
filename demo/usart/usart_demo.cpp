@@ -1,6 +1,7 @@
 #include "usart_demo.hpp"
 
 #include "bsp_usart.hpp"
+#include "bsp_dma.hpp"
 #include "config.hpp"
 #include "demo_debug.hpp"
 #include "demo_protocol.hpp"
@@ -13,7 +14,7 @@ namespace demo::usart
 namespace
 {
 
-alignas(32) std::uint8_t rx_buffer[sizeof(protocol::host_packet)] RAM_D1_BSS{};
+bsp::dma::buffer<sizeof(protocol::host_packet)> rx_buffer BSP_DMA_BUFFER{};
 bool started = false;
 
 void record_request(debug::link_state& debug, const protocol::host_packet& packet) noexcept
@@ -98,7 +99,7 @@ types::status start() noexcept
     }
 
     status = bsp::usart::start_rx_to_idle(
-        app::uart::usart1, rx_buffer, sizeof(rx_buffer), on_rx, nullptr);
+        app::uart::usart1, rx_buffer.view(), on_rx, nullptr);
     state.last_status = protocol::status_code(status);
     if (status != types::status::ok)
     {
