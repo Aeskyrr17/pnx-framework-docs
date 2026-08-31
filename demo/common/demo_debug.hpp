@@ -29,15 +29,14 @@ struct link_state
     std::uint16_t bsp_last_write_requested = 0;
     std::uint16_t bsp_last_write_actual = 0;
     std::uint16_t bsp_pending_write_len = 0;
+    bool bsp_pending_write = false;
+    bool bsp_in_flight_write = false;
     std::uint32_t bsp_read_count = 0;
     std::uint32_t bsp_write_count = 0;
     std::uint32_t bsp_error_count = 0;
     std::uint32_t bsp_tx_wake_count = 0;
-    std::uint32_t bsp_fill_count = 0;
     bool tx_pending = false;
     std::uint32_t tx_pending_seq = 0;
-    std::uint32_t tx_fill_hit_count = 0;
-    std::uint32_t tx_fill_miss_count = 0;
     protocol::host_packet last_rx{};
     protocol::device_packet last_tx{};
 };

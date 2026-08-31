@@ -4,7 +4,8 @@
 #include "demo_debug.hpp"
 #include "demo_protocol.hpp"
 
-#include "tx_api.h"
+#include <array>
+#include <cstring>
 
 namespace demo::usb
 {
@@ -12,27 +13,8 @@ namespace
 {
 
 bool started = false;
-TX_MUTEX response_mutex{};
-bool response_mutex_ready = false;
-bool response_pending = false;
-std::uint32_t response_pending_seq = 0;
-protocol::device_packet pending_response{};
-
-void lock_response() noexcept
-{
-    if (response_mutex_ready)
-    {
-        tx_mutex_get(&response_mutex, TX_WAIT_FOREVER);
-    }
-}
-
-void unlock_response() noexcept
-{
-    if (response_mutex_ready)
-    {
-        tx_mutex_put(&response_mutex);
-    }
-}
+std::array<uint8_t, sizeof(protocol::host_packet)> rx_packet_bytes{};
+std::size_t rx_packet_size = 0U;
 
 void sync_bsp_state(debug::link_state& debug) noexcept
 {
@@ -46,13 +28,13 @@ void sync_bsp_state(debug::link_state& debug) noexcept
     debug.bsp_last_write_requested = usb.last_write_requested;
     debug.bsp_last_write_actual = usb.last_write_actual;
     debug.bsp_pending_write_len = usb.pending_write_len;
+    debug.bsp_pending_write = usb.pending_write;
+    debug.bsp_in_flight_write = usb.in_flight_write;
     debug.bsp_read_count = usb.read_count;
     debug.bsp_write_count = usb.write_count;
     debug.bsp_error_count = usb.error_count;
     debug.bsp_tx_wake_count = usb.tx_wake_count;
-    debug.bsp_fill_count = usb.fill_count;
-    debug.tx_pending = response_pending;
-    debug.tx_pending_seq = response_pending_seq;
+    debug.tx_pending = usb.pending_write || usb.in_flight_write;
 }
 
 void record_request(debug::link_state& debug, const protocol::host_packet& packet) noexcept
@@ -64,76 +46,60 @@ void record_request(debug::link_state& debug, const protocol::host_packet& packe
     debug.last_flag = packet.flag != 0U;
 }
 
-void on_rx(const protocol::host_packet& packet, void* user_data)
+void process_packet(const protocol::host_packet& packet)
 {
-    (void)user_data;
-
     auto& state = debug::debug_instance.usb;
-    sync_bsp_state(state);
-
     record_request(state, packet);
     if (!protocol::validate(packet, protocol::usb_host_magic))
     {
         ++state.error_count;
         state.last_status = protocol::status_code(types::status::invalid_arg);
-        lock_response();
-        response_pending = false;
-        unlock_response();
         return;
     }
 
     ++state.rx_count;
-    protocol::device_packet response = protocol::make_response(
+    const protocol::device_packet response = protocol::make_response(
         protocol::usb_device_magic, packet, types::status::ok, state.connected,
         state.rx_count, state.tx_count + 1U, state.error_count);
-
-    lock_response();
-    pending_response = response;
-    ++response_pending_seq;
-    response_pending = true;
-    state.tx_pending = true;
-    state.tx_pending_seq = response_pending_seq;
-    unlock_response();
-
+    const types::status status = bsp::usb::try_send(response);
     state.last_tx = response;
-    state.ready = true;
-    state.last_status = protocol::status_code(types::status::ok);
-}
-
-bool fill_tx(protocol::device_packet& packet, void* user_data)
-{
-    (void)user_data;
-
-    auto& state = debug::debug_instance.usb;
-    sync_bsp_state(state);
-
-    lock_response();
-    if (!response_pending)
+    state.last_status = protocol::status_code(status);
+    if (status == types::status::ok)
     {
-        ++state.tx_fill_miss_count;
-        unlock_response();
-        return false;
+        ++state.tx_pending_seq;
+        state.ready = true;
     }
-
-    packet = pending_response;
-    ++state.tx_fill_hit_count;
-    state.tx_pending = true;
-    state.tx_pending_seq = response_pending_seq;
-    unlock_response();
-
-    state.last_tx = packet;
-    state.last_status = protocol::status_code(types::status::ok);
-    return true;
+    else
+    {
+        ++state.error_count;
+    }
+    sync_bsp_state(state);
 }
 
-void on_tx_done(uint16_t requested_len, uint16_t actual_len, uint32_t status, void* user_data)
+void on_rx(const uint8_t* data, uint16_t len)
 {
-    (void)user_data;
+
+    // CDC supplies a byte stream. This demo's fixed-size framing is handled here,
+    // rather than assuming one on_rx invocation contains one host_packet.
+    for (uint16_t index = 0U; index < len; ++index)
+    {
+        rx_packet_bytes[rx_packet_size++] = data[index];
+        if (rx_packet_size == rx_packet_bytes.size())
+        {
+            protocol::host_packet packet{};
+            std::memcpy(&packet, rx_packet_bytes.data(), sizeof(packet));
+            rx_packet_size = 0U;
+            process_packet(packet);
+        }
+    }
+}
+
+void on_tx_result(const bsp::usb::tx_result& result)
+{
 
     auto& state = debug::debug_instance.usb;
-    sync_bsp_state(state);
-
-    if (status == 0U && requested_len == sizeof(protocol::device_packet) && actual_len == requested_len)
+    if (result.success() && result.requested_len == sizeof(protocol::device_packet) &&
+        result.actual_len == result.requested_len)
     {
         ++state.tx_count;
         state.last_status = protocol::status_code(types::status::ok);
@@ -143,11 +109,7 @@ void on_tx_done(uint16_t requested_len, uint16_t actual_len, uint32_t status, vo
         ++state.error_count;
         state.last_status = protocol::status_code(types::status::error);
     }
-
-    lock_response();
-    response_pending = false;
-    unlock_response();
-    state.tx_pending = false;
+    sync_bsp_state(state);
 }
 
 } // namespace
@@ -165,20 +127,10 @@ types::status start() noexcept
     debug::reset(state);
     state.started = true;
 
-    if (!response_mutex_ready)
-    {
-        if (tx_mutex_create(&response_mutex, const_cast<CHAR*>("usb_demo_tx"), TX_NO_INHERIT) != TX_SUCCESS)
-        {
-            state.last_status = protocol::status_code(types::status::error);
-            ++state.error_count;
-            return types::status::error;
-        }
-        response_mutex_ready = true;
-    }
-
-    bsp::usb::config config = bsp::usb::make_config<protocol::host_packet, protocol::device_packet>(
-        on_rx, fill_tx, on_tx_done, nullptr);
-    types::status status = bsp::usb::init(config);
+    bsp::usb::config config{};
+    config.on_rx = bsp::usb::rx_callback::bind<&on_rx>();
+    config.on_tx_result = core::callback<void(const bsp::usb::tx_result&)>::bind<&on_tx_result>();
+    const types::status status = bsp::usb::init(config);
     state.last_status = protocol::status_code(status);
     if (status != types::status::ok)
     {
@@ -194,8 +146,7 @@ types::status start() noexcept
 
 void poll() noexcept
 {
-    auto& state = debug::debug_instance.usb;
-    sync_bsp_state(state);
+    sync_bsp_state(debug::debug_instance.usb);
 }
 
 } // namespace demo::usb

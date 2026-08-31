@@ -50,6 +50,7 @@ struct referee_adapter_context
 {
     msg::topic* topic = nullptr;
     application_referee_data data{};
+    void publish_referee_data(const referee::packet_store& packets, const referee::update_info& update);
 };
 
 constexpr ULONG monitor_period_ticks = 20U;
@@ -78,10 +79,10 @@ void create_objects()
     objects_created = hp_text_id >= 0 && heat_text_id >= 0;
 }
 
-void publish_referee_data(const referee::packet_store& packets,
-                          const referee::update_info& update, void* context)
+void referee_adapter_context::publish_referee_data(const referee::packet_store& packets,
+                                                   const referee::update_info& update)
 {
-    auto& adapter = *static_cast<referee_adapter_context*>(context);
+    auto& adapter = *this;
 
     adapter.data.robot_status = packets.game_robot_status;
     adapter.data.heat_now = packets.power_heat_data.shoot_id1_17mm_cooling_heat;
@@ -205,8 +206,8 @@ void run() noexcept
 
     referee::config ref_cfg{};
     ref_cfg.thread_priority = params::referee::thread_priority;
-    ref_cfg.on_update = publish_referee_data;
-    ref_cfg.update_context = &referee_adapter;
+    ref_cfg.on_update = referee::update_callback::bind<referee_adapter_context,
+                                                        &referee_adapter_context::publish_referee_data>(&referee_adapter);
     if (!referee::service::instance().init(ref_cfg))
     {
         state.failure_mask = referee_init_failed;

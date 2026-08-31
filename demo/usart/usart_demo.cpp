@@ -32,9 +32,8 @@ void record_error(debug::link_state& debug, types::status status) noexcept
     debug.last_status = protocol::status_code(status);
 }
 
-void on_rx(bsp::usart::port port, const bsp::usart::rx_frame& frame, void* user_data)
+void on_rx(bsp::usart::port port, const bsp::usart::rx_frame& frame)
 {
-    (void)user_data;
 
     auto& state = debug::debug_instance.usart;
     state.ready = true;
@@ -99,7 +98,7 @@ types::status start() noexcept
     }
 
     status = bsp::usart::start_rx_to_idle(
-        app::uart::usart1, rx_buffer.view(), on_rx, nullptr);
+        app::uart::usart1, rx_buffer.view(), bsp::usart::rx_callback::bind<&on_rx>(), nullptr);
     state.last_status = protocol::status_code(status);
     if (status != types::status::ok)
     {
