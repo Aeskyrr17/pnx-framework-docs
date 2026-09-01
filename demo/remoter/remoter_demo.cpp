@@ -58,6 +58,82 @@ std::uint32_t previous_frame_tick = 0;
 std::uint32_t ps2_frame_period_ticks = 0;
 std::uint32_t ps2_max_frame_period_ticks = 0;
 
+// This is an application-owned command. The remoter module only supplies its
+// normalized state and does not know this type or any of the mappings below.
+struct user_command
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    bool shoot = false;
+    bool relax = true;
+};
+
+void apply_command(const user_command& command) noexcept
+{
+    auto& state = demo::debug::debug_instance.remoter_unit;
+    state.command_x = command.x;
+    state.command_y = command.y;
+    state.command_shoot = command.shoot;
+    state.command_relax = command.relax;
+    ++state.command_update_count;
+}
+
+void map_dr16(const ::remoter::state& input)
+{
+    user_command command{};
+    if (!input.offline && input.active_source == ::remoter::source::dr16)
+    {
+        command.x = input.right_x;
+        command.y = input.right_y;
+        command.shoot = input.mouse_left;
+        command.relax = input.right_sw == ::remoter::sw_state::low;
+    }
+    apply_command(command);
+}
+
+void map_vt03(const ::remoter::state& input)
+{
+    user_command command{};
+    if (!input.offline && input.active_source == ::remoter::source::vt03)
+    {
+        command.x = input.right_x;
+        command.y = input.right_y;
+        command.shoot = input.button;
+        command.relax = input.pause;
+    }
+    apply_command(command);
+}
+
+void map_ps2(const ::remoter::state& input)
+{
+    user_command command{};
+    if (!input.offline && input.active_source == ::remoter::source::ps2)
+    {
+        command.x = input.right_x;
+        command.y = input.right_y;
+        command.shoot = ::remoter::is_held(input.ps2_buttons, ::remoter::ps2_button::r1);
+        command.relax = ::remoter::is_held(input.ps2_buttons, ::remoter::ps2_button::select);
+    }
+    apply_command(command);
+}
+
+::remoter::update_callback configured_mapping() noexcept
+{
+    if constexpr (::config::feature::enable_dr16)
+    {
+        return ::remoter::update_callback::bind<&map_dr16>();
+    }
+    else if constexpr (::config::feature::enable_vt03)
+    {
+        return ::remoter::update_callback::bind<&map_vt03>();
+    }
+    else if constexpr (::config::feature::enable_ps2)
+    {
+        return ::remoter::update_callback::bind<&map_ps2>();
+    }
+    return {};
+}
+
 std::uint16_t key_bits(const ::remoter::key_state& key) noexcept
 {
     std::uint16_t bits = 0;
@@ -71,7 +147,7 @@ void sync_ps2_debug(DebugState& state, const ::remoter::state& data,
 {
     if constexpr (static_cast<bool>(ENABLE_PS2))
     {
-        state.ps2_link = static_cast<std::uint32_t>(ps2_data.data.ps2_link);
+        state.ps2_link = static_cast<std::uint32_t>(ps2_data.link);
         state.ps2_buttons = data.ps2_buttons;
         state.ps2_raw_buttons = ps2_data.data.ps2_buttons;
         state.ps2_pressed = data.ps2_pressed;
@@ -80,7 +156,7 @@ void sync_ps2_debug(DebugState& state, const ::remoter::state& data,
         state.ps2_released_seen_mask |= data.ps2_released;
         state.ps2_mapping_match =
             !data.offline && data.active_source == ::remoter::source::ps2 &&
-            ps2_data.data.ps2_link == ::remoter::ps2_link_state::connected &&
+            ps2_data.link == ::remoter::ps2_link_state::connected &&
             data.ps2_buttons == ps2_data.data.ps2_buttons;
         state.ps2_mapping_pending = ps2_mapping_pending;
         state.ps2_square = ::remoter::is_held(data.ps2_buttons, ::remoter::ps2_button::square);
@@ -107,7 +183,7 @@ void sync_ps2_debug(DebugState& state, const ::remoter::state& data,
         state.ps2_signal_count = ps2_data.signal_count;
         state.ps2_last_signal_tick = ps2_data.last_signal_tick;
         state.ps2_raw_update_count = ps2_raw_update_count;
-        state.ps2_upper_event_count = data.ps2_event_count;
+        state.ps2_upper_event_count = ps2_data.button_event_count;
         state.ps2_button_event_count = ps2_button_event_count;
         state.ps2_last_button_latency_ticks = ps2_last_button_latency_ticks;
         state.ps2_max_button_latency_ticks = ps2_max_button_latency_ticks;
@@ -201,7 +277,8 @@ void monitor_entry(ULONG /*arg*/)
                 previous_frame_tick = ps2_data.last_signal_tick;
             }
 
-            if (ps2_data.data.ps2_pressed != 0U || ps2_data.data.ps2_released != 0U)
+            if (!ps2_data.data.offline &&
+                (ps2_data.data.ps2_pressed != 0U || ps2_data.data.ps2_released != 0U))
             {
                 pending_buttons = ps2_data.data.ps2_buttons;
                 pending_pressed = ps2_data.data.ps2_pressed;
@@ -271,6 +348,7 @@ void run() noexcept
     cfg.ps2.receiver_offline_timeout_ticks = params::remoter::ps2_offline_timeout_ticks;
     cfg.ps2.frame_timeout_ticks = params::remoter::ps2_frame_timeout_ticks;
     cfg.ps2.deadzone = params::remoter::ps2_deadzone;
+    cfg.on_update_callback = configured_mapping();
     cfg.thread_priority = params::remoter::thread_priority + 1U;
 
     if (!::remoter::service::instance().init(cfg))

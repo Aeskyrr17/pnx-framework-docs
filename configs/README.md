@@ -97,7 +97,7 @@ DR16 的最小配置如下：
 
 `bindings.remoter_uart` 负责绑定实际 UART，生成配置会把它同时导出为 `app::uart::ps2`。该 UART 必须在 `board.ioc` 中启用 RX DMA 并完成对应 RX/TX 引脚配置；PS2 驱动初始化时会把绑定端口切换为 `9600 baud, 8 data bits, no parity, 1 stop bit (8N1)`。
 
-PS2 UART 协议和按键位序以 [YFROBOT PS2 UART 说明书](https://pjfcckenlt.feishu.cn/wiki/Xnl8wHa3liFP9zkmWaXcXsWsnqc) 为准。统一遥控器状态通过 `ps2_link` 区分 `connected`、`remote_disconnected`（收到接收器每 200 ms 发送的 `0xAB`）和 `receiver_offline`（正常帧与 `0xAB` 均超时）三种状态；`ps2_buttons` 保留手柄自己的 16 位按键位图，不映射为键盘按键：
+PS2 UART 协议和按键位序以 [YFROBOT PS2 UART 说明书](https://pjfcckenlt.feishu.cn/wiki/Xnl8wHa3liFP9zkmWaXcXsWsnqc) 为准。PS2 专用诊断消息通过 `ps2_state::link` 区分 `connected`、`remote_disconnected`（收到接收器每 200 ms 发送的 `0xAB`）和 `receiver_offline`（正常帧与 `0xAB` 均超时）三种状态；统一遥控器状态中的 `ps2_buttons` 保留手柄自己的 16 位按键位图，不映射为键盘按键：
 
 | 位 | `ps2_button` | 位 | `ps2_button` |
 | --- | --- | --- | --- |
@@ -112,7 +112,7 @@ PS2 UART 协议和按键位序以 [YFROBOT PS2 UART 说明书](https://pjfcckenl
 
 可使用 `remoter::is_held(state.ps2_buttons, remoter::ps2_button::cross)` 判断指定按键是否按下。
 
-上层处理 `ps2_pressed` / `ps2_released` 时应同时记录 `ps2_event_count`，
+上层处理 `ps2_pressed` / `ps2_released` 时可同时记录 PS2 专用诊断消息中的 `button_event_count`，
 仅在计数变化时处理一次，避免同一帧的边缘被重复执行。
 
 ### PS2 Live Watch 调试字段

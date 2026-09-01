@@ -163,6 +163,11 @@ struct remoter_unit_state : unit_test_state
     float left_y = 0.0f;
     float mouse_x = 0.0f;
     float mouse_y = 0.0f;
+    float command_x = 0.0f;
+    float command_y = 0.0f;
+    bool command_shoot = false;
+    bool command_relax = true;
+    std::uint32_t command_update_count = 0;
 };
 
 struct referee_ui_state : unit_test_state
