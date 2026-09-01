@@ -1,11 +1,6 @@
 {
   "build": {
-    "usbx": true,
-    "motors": {
-      "dji": true,
-      "dm": true,
-      "lk": false
-    }
+    "usbx": true
   },
   "bindings": {
     "remoter_uart": "uart5",
