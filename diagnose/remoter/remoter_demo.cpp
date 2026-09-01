@@ -341,15 +341,7 @@ void run() noexcept
     ps2_max_frame_period_ticks = 0;
 
     ::remoter::config cfg{};
-    cfg.dr16.thread_priority = params::remoter::thread_priority;
-    cfg.dr16.rx_timeout_ticks = params::remoter::rx_timeout_ticks;
-    cfg.vt03.thread_priority = params::remoter::thread_priority;
-    cfg.ps2.thread_priority = params::remoter::thread_priority;
-    cfg.ps2.receiver_offline_timeout_ticks = params::remoter::ps2_offline_timeout_ticks;
-    cfg.ps2.frame_timeout_ticks = params::remoter::ps2_frame_timeout_ticks;
-    cfg.ps2.deadzone = params::remoter::ps2_deadzone;
     cfg.on_update_callback = configured_mapping();
-    cfg.thread_priority = params::remoter::thread_priority + 1U;
 
     if (::remoter::service::instance().init(cfg) != types::status::ok)
     {
@@ -381,8 +373,10 @@ void run() noexcept
     {
         const UINT status = tx_thread_create(&monitor_thread, const_cast<CHAR*>("remoter_demo"),
                                              monitor_entry, 0, monitor_stack,
-                                             sizeof(monitor_stack), cfg.thread_priority + 1U,
-                                             cfg.thread_priority + 1U, TX_NO_TIME_SLICE,
+                                             sizeof(monitor_stack),
+                                             params::remoter::thread_priority + 2U,
+                                             params::remoter::thread_priority + 2U,
+                                             TX_NO_TIME_SLICE,
                                              TX_AUTO_START);
         if (status != TX_SUCCESS)
         {

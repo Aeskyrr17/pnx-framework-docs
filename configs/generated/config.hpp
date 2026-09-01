@@ -247,6 +247,7 @@ inline constexpr std::uint32_t request_period_ticks = 1U;
 namespace params::remoter {
   inline constexpr std::uint32_t thread_priority = 2;
   inline constexpr std::uint32_t rx_timeout_ticks = 100;
+  inline constexpr std::uint32_t offline_timeout_ticks = 120;
   inline constexpr std::uint32_t ps2_offline_timeout_ticks = 600;
   inline constexpr std::uint32_t ps2_frame_timeout_ticks = 20;
   inline constexpr float ps2_deadzone = 0.08f;

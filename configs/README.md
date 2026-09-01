@@ -33,6 +33,7 @@
 | `remoter.source` | string | 空 | 遥控器来源，可选 `dr16`、`vt03` 或 `ps2`。 |
 | `remoter.thread_priority` | number | `2` | 遥控器线程优先级。 |
 | `remoter.rx_timeout_ticks` | number | `100` | 遥控器接收超时 tick 数。 |
+| `remoter.offline_timeout_ticks` | number | `120` | 统一输出超过该时间未收到有效源数据时判定离线。 |
 | `remoter.ps2_offline_timeout_ticks` | number | `600` | 超过该时间未收到 PS2 正常帧或 `0xAB` 时，判定接收器离线。 |
 | `remoter.ps2_frame_timeout_ticks` | number | `20` | PS2 正常帧接收到一半时的重同步超时。 |
 | `remoter.ps2_deadzone` | number | `0.08` | PS2 摇杆归一化后的中心死区，范围为 `[0, 1)`。 |
