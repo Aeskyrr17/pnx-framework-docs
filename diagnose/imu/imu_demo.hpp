@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace demo::imu
+namespace diagnose::imu
 {
 
 // Plain, debugger-friendly mirror of the latest DMIMU message and the most
@@ -45,7 +45,7 @@ struct dmimu_debug_state
 
 void run() noexcept;
 
-} // namespace demo::imu
+} // namespace diagnose::imu
 
 // Add `dmimu_demo_debug` to the IDE Live Watch / Expressions window.
-extern "C" demo::imu::dmimu_debug_state dmimu_demo_debug;
+extern "C" diagnose::imu::dmimu_debug_state dmimu_demo_debug;

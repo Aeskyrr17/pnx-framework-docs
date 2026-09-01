@@ -9,7 +9,7 @@
 
 #include <cstdint>
 
-namespace demo::usart
+namespace diagnose::usart
 {
 namespace
 {
@@ -111,4 +111,4 @@ types::status start() noexcept
     return types::status::ok;
 }
 
-} // namespace demo::usart
+} // namespace diagnose::usart

@@ -10,7 +10,8 @@
 | --- | --- |
 | `board/` | STM32CubeMX/HAL/ThreadX/USBX 生成工程、启动文件、链接脚本和工具链文件。 |
 | `configs/` | `params.json`、`robot.json`、IOC 解析与 `config.hpp`/`robot_config.hpp` 生成逻辑。 |
-| `demo/` | 板端联调入口、具体 demo 和主机侧验证脚本。 |
+| `demo/` | 最小上层应用参考，只展示公共 API 的装配和使用。 |
+| `diagnose/` | 板端模块诊断、调试状态和主机侧验证脚本。 |
 | `cmsis-dsp/` | 随工程纳入的 CMSIS-DSP 子集，供 AHRS/EKF 等算法使用。 |
 | `pnx_bsp/` | CAN、USART、SPI、PWM、DWT、EXTI、Flash、USB 等板级外设封装。 |
 | `pnx_devices/` | 电机、IMU、LED、UI 等基于 BSP 的具体设备与统一接口。 |
@@ -68,7 +69,7 @@ ThreadX 初始化阶段会从 `board/Core/Src/app_threadx.c` 调用：
 extern "C" void app_start();
 ```
 
-当前实现位于 `demo/app.cpp`，通过打开对应 `demo::<name>::run()` 或 `demo::<name>::start()` 选择板端联调入口。后续正式机器人应用也应从这里完成服务初始化和设备装配。
+当前 `app_start()` 位于 `demo/app.cpp`，展示正式上层线程如何初始化服务、注册设备并消费消息。`diagnose/app.cpp` 另行提供 `diagnose_start()`，用于按需启动板端诊断，不作为默认应用入口。
 
 ## 开发约束
 

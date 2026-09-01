@@ -58,6 +58,7 @@ file(GLOB_RECURSE PNX_EMBEDDED_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_devices/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_modules/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_libs/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/diagnose/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/demo/*.cpp"
 )
 
@@ -101,6 +102,7 @@ file(GLOB_RECURSE PNX_EMBEDDED_HEADERS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_modules/*.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_libs/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_libs/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/diagnose/*.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/demo/*.hpp"
 )
 
@@ -144,6 +146,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     PNX_DMA_DEDICATED_SECTION=${PNX_DMA_DEDICATED_SECTION}
     PNX_DMA_CACHE_LINE_SIZE=${PNX_DMA_CACHE_LINE_SIZE}
+    ROBOT_MOTOR_COUNT=${robot_motor_count}
 )
 
 target_link_libraries(${PROJECT_NAME}

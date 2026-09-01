@@ -5,7 +5,7 @@
 namespace demo::usb
 {
 
-types::status start() noexcept;
-void poll() noexcept;
+types::status init() noexcept;
 
 } // namespace demo::usb
+

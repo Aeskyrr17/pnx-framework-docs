@@ -7,7 +7,7 @@
 #include <array>
 #include <cstring>
 
-namespace demo::usb
+namespace diagnose::usb
 {
 namespace
 {
@@ -154,4 +154,4 @@ void poll() noexcept
     sync_bsp_state(debug::debug_instance.usb);
 }
 
-} // namespace demo::usb
+} // namespace diagnose::usb

@@ -9,7 +9,7 @@
 
 #include <cstdint>
 
-namespace demo::motor
+namespace diagnose::motor
 {
 
 namespace devices
@@ -110,7 +110,7 @@ void set_commands() noexcept
 
 void sync_debug(std::uint32_t stages, std::uint32_t send_count, bool timed_out) noexcept
 {
-    auto& state = demo::debug::debug_instance.motor_unit;
+    auto& state = diagnose::debug::debug_instance.motor_unit;
     auto& motor1 = devices::motor1_device;
     auto& motor2 = devices::motor2_device;
     const bool motor1_is_online = motor1.status() == ::motors::state::online;
@@ -187,7 +187,7 @@ void control_entry(ULONG started_at_arg)
 
 void run() noexcept
 {
-    auto& state = demo::debug::debug_instance.motor_unit;
+    auto& state = diagnose::debug::debug_instance.motor_unit;
     state = {};
     state.started = true;
 
@@ -220,4 +220,4 @@ void run() noexcept
     sync_debug(devices_initialized | control_thread_started, 0U, false);
 }
 
-} // namespace demo::motor
+} // namespace diagnose::motor

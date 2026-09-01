@@ -12,11 +12,11 @@
 #include <cstring>
 
 extern "C" {
-demo::imu::dmimu_debug_state dmimu_demo_debug{};
+diagnose::imu::dmimu_debug_state dmimu_demo_debug{};
 float dmimu_yaw_debug=0.0f;
 }
 
-namespace demo::imu
+namespace diagnose::imu
 {
 namespace
 {
@@ -141,7 +141,7 @@ float wrap_angle(float angle) noexcept
 
 void sync_debug(const ::imu::state& data, std::uint32_t stages, bool timed_out) noexcept
 {
-    auto& state = demo::debug::debug_instance.imu_unit;
+    auto& state = diagnose::debug::debug_instance.imu_unit;
     const bool data_seen = (stages & data_received) != 0U;
     const bool valid_quaternion = data_seen && quaternion_valid(data);
     if (valid_quaternion)
@@ -265,7 +265,7 @@ void monitor_entry(ULONG /*arg*/)
 
 void run() noexcept
 {
-    auto& state = demo::debug::debug_instance.imu_unit;
+    auto& state = diagnose::debug::debug_instance.imu_unit;
     state = {};
     state.started = true;
     state.total_count = 5U;
@@ -353,4 +353,4 @@ void run() noexcept
     sync_debug({}, service_initialized | subscriber_created | monitor_thread_started, false);
 }
 
-} // namespace demo::imu
+} // namespace diagnose::imu

@@ -10,7 +10,7 @@
 #include <cstdio>
 #include <cstdint>
 
-namespace demo::referee_ui
+namespace diagnose::referee_ui
 {
 namespace
 {
@@ -100,7 +100,7 @@ void referee_adapter_context::publish_referee_data(const referee::packet_store& 
 
 void sync_debug(const application_referee_data& data, std::uint32_t stages) noexcept
 {
-    auto& state = demo::debug::debug_instance.referee_ui;
+    auto& state = diagnose::debug::debug_instance.referee_ui;
     if (data.update_count > 0U)
     {
         stages |= frame_received;
@@ -184,7 +184,7 @@ void monitor_entry(ULONG /*arg*/)
 
 void run() noexcept
 {
-    auto& state = demo::debug::debug_instance.referee_ui;
+    auto& state = diagnose::debug::debug_instance.referee_ui;
     state = {};
     state.started = true;
     state.total_count = 7U;
@@ -196,7 +196,7 @@ void run() noexcept
         return;
     }
     referee_adapter.data = {};
-    if (msg::init(referee_adapter.topic, "demo/referee") != types::status::ok)
+    if (msg::init(referee_adapter.topic, "diagnose/referee") != types::status::ok)
     {
         state.failure_mask = topic_create_failed;
         state.failed_count = 1U;
@@ -251,4 +251,4 @@ void run() noexcept
                        monitor_thread_started | application_topic_created);
 }
 
-} // namespace demo::referee_ui
+} // namespace diagnose::referee_ui

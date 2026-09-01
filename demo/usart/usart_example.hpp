@@ -5,6 +5,8 @@
 namespace demo::usart
 {
 
-types::status start() noexcept;
+types::status init() noexcept;
+types::status send_hello() noexcept;
 
 } // namespace demo::usart
+

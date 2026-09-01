@@ -163,7 +163,7 @@ CAN 的 `id_type` 只表示标准帧 ID 或扩展帧 ID，不表示 CAN Classic 
 }
 ```
 
-生成结果为 `config::feature::has_dmimu`、`HAS_DMIMU` 和纯连接配置 `robot::imu::dmimu`。运行模式及线程参数由 `params::dmimu` 提供，`demo::imu::run()` 只在 `HAS_DMIMU=1` 时组装两类配置并调用 `ahrs::dmimu_service::init()`；没有该字段的旧配置不会引用 DMIMU 代码。
+生成结果为 `config::feature::has_dmimu`、`HAS_DMIMU` 和纯连接配置 `robot::imu::dmimu`。运行模式及线程参数由 `params::dmimu` 提供，`diagnose::imu::run()` 只在 `HAS_DMIMU=1` 时组装两类配置并调用 `ahrs::dmimu_service::init()`；没有该字段的旧配置不会引用 DMIMU 代码。
 
 主动模式是部署前置条件：DMIMU 必须通过外部工具预先设置为主动发送加速度、角速度、欧拉角和四元数。固件不会修改其通信模式、输出选择或持久参数。
 

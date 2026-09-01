@@ -7,7 +7,7 @@
 #include <cstring>
 #include <type_traits>
 
-namespace demo::protocol
+namespace diagnose::protocol
 {
 
 inline constexpr std::uint32_t usart_host_magic = 0x31535544U;   // "DUS1"
@@ -99,4 +99,4 @@ inline void copy_host_packet(const void* src, host_packet& out) noexcept
     std::memcpy(&out, src, sizeof(out));
 }
 
-} // namespace demo::protocol
+} // namespace diagnose::protocol

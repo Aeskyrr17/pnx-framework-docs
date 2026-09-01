@@ -5,7 +5,7 @@
 
 #include <cstdint>
 
-namespace demo::debug
+namespace diagnose::debug
 {
 
 struct link_state
@@ -195,6 +195,6 @@ extern debug_instance_type& debug_instance;
 
 void reset(link_state& state) noexcept;
 
-} // namespace demo::debug
+} // namespace diagnose::debug
 
-extern "C" demo::debug::debug_instance_type demo_debug_instance;
+extern "C" diagnose::debug::debug_instance_type demo_debug_instance;

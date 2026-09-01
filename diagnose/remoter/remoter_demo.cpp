@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <cstring>
 
-namespace demo::remoter
+namespace diagnose::remoter
 {
 namespace
 {
@@ -70,7 +70,7 @@ struct user_command
 
 void apply_command(const user_command& command) noexcept
 {
-    auto& state = demo::debug::debug_instance.remoter_unit;
+    auto& state = diagnose::debug::debug_instance.remoter_unit;
     state.command_x = command.x;
     state.command_y = command.y;
     state.command_shoot = command.shoot;
@@ -195,7 +195,7 @@ void sync_ps2_debug(DebugState& state, const ::remoter::state& data,
 void sync_debug(const ::remoter::state& data, const ::remoter::ps2_state& ps2_data,
                 std::uint32_t stages, bool timed_out) noexcept
 {
-    auto& state = demo::debug::debug_instance.remoter_unit;
+    auto& state = diagnose::debug::debug_instance.remoter_unit;
     if (!data.offline)
     {
         stages |= remoter_online;
@@ -320,7 +320,7 @@ void monitor_entry(ULONG /*arg*/)
 
 void run() noexcept
 {
-    auto& state = demo::debug::debug_instance.remoter_unit;
+    auto& state = diagnose::debug::debug_instance.remoter_unit;
     state = {};
     state.started = true;
     state.total_count = 6U;
@@ -398,4 +398,4 @@ void run() noexcept
                false);
 }
 
-} // namespace demo::remoter
+} // namespace diagnose::remoter
