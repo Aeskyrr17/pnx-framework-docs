@@ -55,7 +55,7 @@ msg::subscriber dmimu_sub{};
 ULONG started_at = 0;
 std::uint32_t observed_count = 0;
 
-bool quaternion_valid(const ahrs::message& data) noexcept
+bool quaternion_valid(const ::imu::state& data) noexcept
 {
     const float norm =
         data.quaternion[0] * data.quaternion[0] +
@@ -74,7 +74,7 @@ float quaternion_norm(const float quaternion[4]) noexcept
                      quaternion[3] * quaternion[3]);
 }
 
-void capture_dmimu_message(const ahrs::dmimu_message& data) noexcept
+void capture_dmimu_message(const ::imu::state& data) noexcept
 {
     auto& debug = dmimu_demo_debug;
     debug.message_received = true;
@@ -95,9 +95,7 @@ void capture_dmimu_message(const ahrs::dmimu_message& data) noexcept
     debug.yaw = data.yaw;
     debug.pitch = data.pitch;
     debug.roll = data.roll;
-    debug.gyro[0] = data.gyro_r;
-    debug.gyro[1] = data.gyro_p;
-    debug.gyro[2] = data.gyro_y;
+    std::memcpy(debug.gyro, data.gyro, sizeof(debug.gyro));
     std::memcpy(debug.accel, data.accel, sizeof(debug.accel));
     dmimu_yaw_debug = data.yaw;
 }
@@ -141,7 +139,7 @@ float wrap_angle(float angle) noexcept
     return angle;
 }
 
-void sync_debug(const ahrs::message& data, std::uint32_t stages, bool timed_out) noexcept
+void sync_debug(const ::imu::state& data, std::uint32_t stages, bool timed_out) noexcept
 {
     auto& state = demo::debug::debug_instance.imu_unit;
     const bool data_seen = (stages & data_received) != 0U;
@@ -232,9 +230,9 @@ void sync_debug(const ahrs::message& data, std::uint32_t stages, bool timed_out)
 
 void monitor_entry(ULONG /*arg*/)
 {
-    ahrs::message data{};
+    ::imu::state data{};
 #if HAS_DMIMU
-    ahrs::dmimu_message dmimu_data{};
+    ::imu::state dmimu_data{};
 #endif
     std::uint32_t stages = service_initialized | subscriber_created | monitor_thread_started;
     for (;;)
@@ -316,7 +314,7 @@ void run() noexcept
     }
     dmimu_demo_debug.service_initialized = true;
 
-    dmimu_sub = msg::subscribe<ahrs::dmimu_message>();
+    dmimu_sub = msg::subscribe(ahrs::dmimu_service::instance().output());
     dmimu_demo_debug.subscriber_created = dmimu_sub.valid();
     if (!dmimu_sub.valid())
     {
@@ -327,7 +325,7 @@ void run() noexcept
     }
 #endif
 
-    ahrs_sub = msg::subscribe<ahrs::message>();
+    ahrs_sub = msg::subscribe(ahrs::service::instance().output());
     if (!ahrs_sub.valid())
     {
         state.failure_mask = subscribe_failed;

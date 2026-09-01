@@ -14,13 +14,13 @@ imu::bmi088                            imu::dmimu
   ↓ 本地主控完成姿态融合                  ↓ 解析设备已经融合的数据
 ahrs::service                         ahrs::dmimu_service
   ↓                                      ↓
-ahrs::message                         ahrs::dmimu_message
+imu::state                           imu::state
   ↓                                      ↓
 msg::subscriber ahrs_sub              msg::subscriber dmimu_sub
 ```
 
-- 原有 BMI088 服务继续使用 `ahrs::service`、`ahrs::message` 和内部成员 `imu_`，命名及启动方式未改变。
-- DMIMU 使用独立的 `ahrs::dmimu_service`、`ahrs::dmimu_message` 和消息 topic。
+- BMI088 服务继续使用 `ahrs::service` 和内部成员 `imu_`，通过自己的 `channel<imu::state>` 发布融合结果。
+- DMIMU 使用独立的 `ahrs::dmimu_service`，通过另一个 `channel<imu::state>` 发布设备直出结果。
 - 两个服务可以同时运行，消息不会互相覆盖，因为消息系统按 C++ 载荷类型区分 topic。
 - 当前 demo 会先启动 BMI088；只有 BMI088 初始化成功后才继续启动 DMIMU。两条生产线程独立，但启动阶段仍有这个顺序关系。
 
@@ -184,7 +184,7 @@ imu::dmimu::snapshot
   ↓
 ahrs::dmimu_service::publish_snapshot()
   ↓
-ahrs::dmimu_message topic
+dmimu_service::output() channel<imu::state>
   ↓
 上层 subscriber
 ```
@@ -193,13 +193,14 @@ ahrs::dmimu_message topic
 
 ## 上层消息接口
 
-上层只需要订阅 `ahrs::dmimu_message`，不应直接处理 CAN 帧或调用设备的 `process_*()` 接口：
+上层只需要订阅 DMIMU service 的输出 channel，不应直接处理 CAN 帧或调用设备的 `process_*()` 接口：
 
 ```cpp
 #if HAS_DMIMU
-msg::subscriber dmimu_sub = msg::subscribe<ahrs::dmimu_message>();
+msg::subscriber dmimu_sub =
+    msg::subscribe(ahrs::dmimu_service::instance().output());
 
-ahrs::dmimu_message data{};
+imu::state data{};
 if (dmimu_sub.valid() && msg::available(dmimu_sub))
 {
     if (msg::read(dmimu_sub, data) == types::status::ok)
@@ -226,24 +227,24 @@ if (dmimu_sub.valid() && msg::available(dmimu_sub))
 | `pitch` | rad；服务层将设备的 `pitch_deg` 转换为弧度后发布。 |
 | `roll` | rad；服务层将设备的 `roll_deg` 转换为弧度后发布。 |
 | `total_yaw` | rad；当前恒为 0，DMIMU 未提供多圈 yaw。 |
-| `gyro_r/p/y` | rad/s。 |
+| `gyro[3]` | rad/s。 |
 | `accel[3]` | m/s²。 |
 | `sequence` | 每形成一个完整四帧快照加 1。掉线清零消息为 0。 |
 | `received_tick` | 完整快照形成时的 ThreadX tick。掉线清零消息为 0。 |
 | `online` | `true` 表示正常完整快照；`false` 表示掉线清零消息。 |
 
-重要规则：DMIMU 设备协议和 `imu::dmimu::snapshot` 内部仍使用度制字段 `*_deg`；`dmimu_service` 在消息发布边界转换为弧度。因此上层收到的 `ahrs::dmimu_message` 与 BMI088 `ahrs::message` 的欧拉角单位一致，均为弧度。
+重要规则：DMIMU 设备协议和 `imu::dmimu::snapshot` 内部仍使用度制字段 `*_deg`；`dmimu_service` 在消息发布边界转换为弧度。因此两个 `imu::state` channel 的欧拉角单位一致，均为弧度。
 
 ## Topic 与读取规则
 
 消息系统按消息类型保存独立 topic：
 
 ```cpp
-ahrs::message        // BMI088 本地融合结果
-ahrs::dmimu_message  // DMIMU 设备直出结果
+ahrs::service::instance().output()        // BMI088 本地融合结果
+ahrs::dmimu_service::instance().output()  // DMIMU 设备直出结果
 ```
 
-每种 topic 只保留最新一次发布的数据，每个订阅者拥有独立的 `pending` 标记。因此：
+每个 channel 只保留最新一次发布的数据，每个订阅者拥有独立的 `pending` 标记。因此：
 
 - 多个订阅者互不影响；
 - `msg::read()` 成功后只清除当前订阅者的 pending 状态；
@@ -264,7 +265,7 @@ DMIMU 只有在加速度、角速度、欧拉角和四元数四类帧全部齐�
 当状态从在线变为离线时：
 
 1. 设备层清空工作快照、完成快照和 pending valid mask；
-2. 服务层发布一次值初始化的 `ahrs::dmimu_message`；
+2. 服务层向自己的 channel 发布一次离线 `imu::state`；
 3. 四元数、欧拉角、角速度、加速度、序号和时间戳全部为 0；
 4. `online=false`；
 5. 离线持续期间不会反复发布清零消息。
@@ -298,7 +299,7 @@ dmimu_debug_telemetry
 
 ## 上层使用约束
 
-1. 业务层只订阅 `ahrs::dmimu_message`，不要注册第二套 CAN 回调。
+1. 业务层只订阅 `dmimu_service::output()`，不要注册第二套 CAN 回调。
 2. 不要在业务线程调用 `process_next()`、`process_pending()`、`take_snapshot()` 或 `audit_online()`；这些接口由 `dmimu_service` 线程拥有。
 3. 正常控制逻辑必须先检查 `message.online`。
 4. 按 rad 解释 DMIMU 欧拉角，按 rad/s 解释角速度，按 m/s² 解释加速度。

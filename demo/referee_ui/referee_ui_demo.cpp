@@ -48,7 +48,7 @@ struct application_referee_data
 
 struct referee_adapter_context
 {
-    msg::topic* topic = nullptr;
+    msg::channel<application_referee_data> topic{};
     application_referee_data data{};
     void publish_referee_data(const referee::packet_store& packets, const referee::update_info& update);
 };
@@ -195,9 +195,8 @@ void run() noexcept
         state.failed_count = 1U;
         return;
     }
-    referee_adapter = {};
-    referee_adapter.topic = msg::create<application_referee_data>();
-    if (referee_adapter.topic == nullptr)
+    referee_adapter.data = {};
+    if (msg::init(referee_adapter.topic, "demo/referee") != types::status::ok)
     {
         state.failure_mask = topic_create_failed;
         state.failed_count = 1U;
@@ -223,7 +222,7 @@ void run() noexcept
     }
     create_objects();
 
-    referee_sub = msg::subscribe<application_referee_data>();
+    referee_sub = msg::subscribe(referee_adapter.topic);
     if (!referee_sub.valid())
     {
         state.failure_mask = subscribe_failed;

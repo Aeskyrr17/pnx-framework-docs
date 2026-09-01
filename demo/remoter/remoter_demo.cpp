@@ -358,7 +358,7 @@ void run() noexcept
         return;
     }
 
-    remoter_sub = msg::subscribe<::remoter::state>();
+    remoter_sub = msg::subscribe(::remoter::service::instance().output());
     if (!remoter_sub.valid())
     {
         state.failure_mask = subscribe_failed;
@@ -366,12 +366,15 @@ void run() noexcept
         return;
     }
 
-    ps2_sub = msg::subscribe<::remoter::ps2_state>();
-    if (!ps2_sub.valid())
+    if constexpr (::config::feature::enable_ps2)
     {
-        state.failure_mask = ps2_raw_subscribe_failed;
-        state.failed_count = 1U;
-        return;
+        ps2_sub = msg::subscribe(::remoter::ps2::instance().output());
+        if (!ps2_sub.valid())
+        {
+            state.failure_mask = ps2_raw_subscribe_failed;
+            state.failed_count = 1U;
+            return;
+        }
     }
 
     if (!monitor_started)
