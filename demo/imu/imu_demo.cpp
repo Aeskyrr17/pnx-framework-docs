@@ -283,7 +283,7 @@ void run() noexcept
     cfg.target_temp = params::ahrs::target_temp;
     cfg.temperature_control_enabled = true;
 
-    if (!ahrs::service::instance().init(cfg))
+    if (ahrs::service::instance().init(cfg) != types::status::ok)
     {
         state.failure_mask = service_init_failed;
         state.failed_count = 1U;
@@ -305,7 +305,8 @@ void run() noexcept
     dmimu_service_cfg.receive_wait_ticks = params::dmimu::receive_wait_ticks;
     dmimu_service_cfg.request_period_ticks = params::dmimu::request_period_ticks;
 
-    if (!ahrs::dmimu_service::instance().init(dmimu_cfg, dmimu_service_cfg))
+    if (ahrs::dmimu_service::instance().init(dmimu_cfg, dmimu_service_cfg) !=
+        types::status::ok)
     {
         state.failure_mask = service_init_failed;
         state.failed_count = 1U;

@@ -207,14 +207,14 @@ void run() noexcept
     ref_cfg.thread_priority = params::referee::thread_priority;
     ref_cfg.on_update_callback = referee::update_callback::bind<
         referee_adapter_context, &referee_adapter_context::publish_referee_data>(&referee_adapter);
-    if (!referee::service::instance().init(ref_cfg))
+    if (referee::service::instance().init(ref_cfg) != types::status::ok)
     {
         state.failure_mask = referee_init_failed;
         state.failed_count = 1U;
         return;
     }
 
-    if (!ui::canvas::instance().init())
+    if (ui::canvas::instance().init() != types::status::ok)
     {
         state.failure_mask = ui_init_failed;
         state.failed_count = 1U;

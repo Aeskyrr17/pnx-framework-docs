@@ -43,8 +43,14 @@ bool initialize() noexcept
     }
     if (!service.register_motor(motor1_device) ||
         !service.register_motor(motor2_device) ||
-        !service.register_motor(motor3_device) ||
-        !service.start())
+        !service.register_motor(motor3_device))
+    {
+        return false;
+    }
+    ::motors::motor_service_config config{};
+    config.control_period_ticks = 2U;
+    config.alive_check_period_ticks = 100U;
+    if (service.start(config) != types::status::ok)
     {
         return false;
     }
@@ -76,7 +82,6 @@ enum failure : std::uint32_t
 
 constexpr ULONG control_period_ticks = 2U;
 constexpr ULONG online_timeout_ticks = 1000U;
-constexpr ULONG alive_check_period_ticks = 100U;
 constexpr bool require_motor1_online = false;
 constexpr int16_t motor1_test_current = 3000;
 constexpr float motor2_mit_position = 0.0f;
@@ -89,7 +94,6 @@ TX_THREAD control_thread{};
 alignas(8) std::uint8_t control_stack[1024]{};
 bool initialized = false;
 bool thread_started = false;
-ULONG last_alive_check_tick = 0U;
 
 void set_commands() noexcept
 {
@@ -165,15 +169,9 @@ void control_entry(ULONG started_at_arg)
     for (;;)
     {
         set_commands();
-        devices::service.send_control();
+        devices::service.process(static_cast<std::uint32_t>(tx_time_get()));
         ++send_count;
         stages |= control_tx_running;
-
-        if ((tx_time_get() - last_alive_check_tick) >= alive_check_period_ticks)
-        {
-            devices::service.alive_check();
-            last_alive_check_tick = tx_time_get();
-        }
         sync_debug(stages, send_count, (tx_time_get() - started_at) > online_timeout_ticks);
 
         tx_thread_sleep(control_period_ticks);

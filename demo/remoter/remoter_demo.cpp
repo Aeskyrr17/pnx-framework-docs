@@ -351,7 +351,7 @@ void run() noexcept
     cfg.on_update_callback = configured_mapping();
     cfg.thread_priority = params::remoter::thread_priority + 1U;
 
-    if (!::remoter::service::instance().init(cfg))
+    if (::remoter::service::instance().init(cfg) != types::status::ok)
     {
         state.failure_mask = service_init_failed;
         state.failed_count = 1U;
