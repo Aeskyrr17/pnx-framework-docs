@@ -34,6 +34,18 @@
 
 不要把依赖外设的初始化移到 CubeMX 外设初始化之前。不要在 `app_start()` 阻塞；应像 `demo::application::start()` 一样创建 ThreadX 线程来运行应用工作。
 
+## 回调与消息出口
+
+组件的 `config` 只在第一次成功 `init()` 时固定；后续 `init(config)` 不会重新绑定回调。因此，应在首次启动前确定业务回调，且回调目标必须在组件运行期间保持有效。
+
+| 组件 | 回调是否为初始化前提 | 推荐的上层接入方式 |
+| --- | --- | --- |
+| `bsp::usb` | 是。必须提供 RX 或 TX-result 回调之一。 | 由拥有 USB 协议的 task 在 `config` 中绑定回调；BSP 自行创建 CDC 收发线程。 |
+| `remoter::service` | 否。`on_update_callback` 是可选增强。 | 优先订阅 `output()`；若使用回调，它运行在合并线程中且不得阻塞。 |
+| `referee::service` | 否。`on_update_callback` 是可选增强。 | 当前没有公开消息 channel。业务若需接收稳定快照，应在回调中轻量复制或非阻塞发布到自己的 channel，而非跨线程直接长期读取 `packets()` 引用。 |
+
+USB RX、遥控 USART RX 和裁判 USART RX 的底层接收回调是组件的内部实现；上表指的是应用层可选择绑定的业务回调。
+
 ## 入口
 ThreadX 初始化阶段会从 `board/Core/Src/app_threadx.c` 调用：
 ```cpp
