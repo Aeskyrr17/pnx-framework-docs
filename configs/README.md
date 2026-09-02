@@ -133,6 +133,26 @@ PS2 UART 协议和按键位序以 [YFROBOT PS2 UART 说明书](https://pjfcckenl
 
 CAN 的 `id_type` 只表示标准帧 ID 或扩展帧 ID，不表示 CAN Classic 或 CAN FD。CAN Classic/FD 仍由 `board.ioc` 的 `FDCANx.FrameFormat` 推导；`can.<fdcan>.id_type` 只控制生成到 `config::can::filter_id_types` 的标准/扩展过滤类型。
 
+## CAN role bindings
+
+`bindings.can_buses.<role>` maps a task-level CAN role to an IOC-enabled FDCAN instance. The legacy string form only binds a bus:
+
+```json
+"chassis": "fdcan2"
+```
+
+Use the object form when the role owns fixed CAN frame IDs. `rx_header` and `tx_header` accept a JSON number or numeric string such as `"0xC1"`:
+
+```json
+"chassis": {
+  "bus": "fdcan2",
+  "rx_header": "0xC1",
+  "tx_header": "0xB2"
+}
+```
+
+The generator emits `app::can::chassis`, `app::can::chassis_rx_header`, and `app::can::chassis_tx_header`. Headers are checked against the configured standard/extended CAN ID range. Pins, bit timing, CAN Classic/FD format, and global filter ID type remain board-level concerns.
+
 ## robot.json
 
 `robot.json` 描述机器人设备树，包含可选 IMU 与电机配置。
