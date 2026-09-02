@@ -20,7 +20,7 @@ types::status init() noexcept
         return status;
     }
 
-    status = msg::init(output, "demo/sample");
+    status = msg::init(output);
     if (status != types::status::ok)
     {
         return status;
@@ -41,4 +41,3 @@ bool read(sample& data) noexcept
 }
 
 } // namespace demo::topic
-

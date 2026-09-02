@@ -196,7 +196,7 @@ void start() noexcept
         return;
     }
     referee_adapter.data = {};
-    if (msg::init(referee_adapter.topic, "diagnose/referee") != types::status::ok)
+    if (msg::init(referee_adapter.topic) != types::status::ok)
     {
         state.failure_mask = topic_create_failed;
         state.failed_count = 1U;

@@ -21,7 +21,7 @@ msg::subscriber ahrs_sub              msg::subscriber dmimu_sub
 
 - BMI088 服务继续使用 `ahrs::service` 和内部成员 `imu_`，通过自己的 `channel<imu::state>` 发布融合结果。
 - DMIMU 使用独立的 `ahrs::dmimu_service`，通过另一个 `channel<imu::state>` 发布设备直出结果。
-- 两个服务可以同时运行，消息不会互相覆盖，因为消息系统按 C++ 载荷类型区分 topic。
+- 两个服务可以同时运行，消息不会互相覆盖，因为每个 `channel<imu::state>` 对象都是独立 topic。
 - 当前 demo 会先启动 BMI088；只有 BMI088 初始化成功后才继续启动 DMIMU。两条生产线程独立，但启动阶段仍有这个顺序关系。
 
 ## 编译开关与配置来源
