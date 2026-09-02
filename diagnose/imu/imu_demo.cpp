@@ -263,7 +263,7 @@ void monitor_entry(ULONG /*arg*/)
 
 } // namespace
 
-void run() noexcept
+void start() noexcept
 {
     auto& state = diagnose::debug::debug_instance.imu_unit;
     state = {};

@@ -7,10 +7,10 @@
 
 extern "C" void diagnose_start()
 {
-    diagnose::imu::run();
-    diagnose::motor::run();
-    // diagnose::remoter::run();
-    // diagnose::referee_ui::run();
+    diagnose::imu::start();
+    diagnose::motor::start();
+    // diagnose::remoter::start();
+    // diagnose::referee_ui::start();
     // diagnose::usart::start();
     // diagnose::usb::start();
 }

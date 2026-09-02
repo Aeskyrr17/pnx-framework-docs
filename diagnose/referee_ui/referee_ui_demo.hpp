@@ -3,6 +3,6 @@
 namespace diagnose::referee_ui
 {
 
-void run() noexcept;
+void start() noexcept;
 
 } // namespace diagnose::referee_ui

@@ -3,6 +3,6 @@
 namespace diagnose::motor
 {
 
-void run() noexcept;
+void start() noexcept;
 
 } // namespace diagnose::motor

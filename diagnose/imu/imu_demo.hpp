@@ -43,7 +43,7 @@ struct dmimu_debug_state
     std::uint32_t device_reconnect_count = 0U;
 };
 
-void run() noexcept;
+void start() noexcept;
 
 } // namespace diagnose::imu
 

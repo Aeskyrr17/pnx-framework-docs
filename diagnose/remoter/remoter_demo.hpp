@@ -3,6 +3,6 @@
 namespace diagnose::remoter
 {
 
-void run() noexcept;
+void start() noexcept;
 
 } // namespace diagnose::remoter

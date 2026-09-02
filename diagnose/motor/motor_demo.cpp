@@ -185,7 +185,7 @@ void control_entry(ULONG started_at_arg)
 
 } // namespace
 
-void run() noexcept
+void start() noexcept
 {
     auto& state = diagnose::debug::debug_instance.motor_unit;
     state = {};
