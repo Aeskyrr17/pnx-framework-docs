@@ -542,6 +542,39 @@ list(JOIN can_id_type_list ", " can_id_type_cpp)
 list(JOIN can_config_list ", " can_config_cpp)
 list(LENGTH PNX_IOC_FDCAN_HW can_bus_count)
 
+# --- params.json: application CAN bindings ---
+# A binding gives application code a stable semantic name for an IOC-enabled
+# FDCAN instance. Pins, timing and frame format remain board/CubeMX concerns.
+set(can_app_binding_body "")
+string(JSON can_app_binding_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings can_buses)
+if(json_err)
+    set(can_app_binding_count 0)
+endif()
+if(can_app_binding_count GREATER 0)
+    math(EXPR can_app_binding_last "${can_app_binding_count} - 1")
+    foreach(index RANGE 0 ${can_app_binding_last})
+        string(JSON role MEMBER "${params_json}" bindings can_buses ${index})
+        _pnx_cpp_identifier("${role}" role_ident)
+        if(NOT role_ident STREQUAL role)
+            message(FATAL_ERROR "CAN role '${role}' must be a C++ identifier")
+        endif()
+
+        string(JSON can_binding_bus ERROR_VARIABLE json_err GET "${params_json}" bindings can_buses ${role})
+        if(json_err OR can_binding_bus STREQUAL "")
+            message(FATAL_ERROR "CAN role '${role}' requires an FDCAN instance name")
+        endif()
+        string(TOLOWER "${can_binding_bus}" can_binding_bus)
+        pnx_ioc_hw_in_list("${PNX_IOC_FDCAN_HW}" "${can_binding_bus}" can_binding_bus_present)
+        if(NOT can_binding_bus_present)
+            message(FATAL_ERROR
+                "CAN role '${role}' uses ${can_binding_bus}, which is not present in ${IOC}")
+        endif()
+
+        string(APPEND can_app_binding_body
+            "inline constexpr bsp::can::bus ${role_ident} = bsp::can::bus::${can_binding_bus}${generated_semicolon_token}\n")
+    endforeach()
+endif()
+
 set(usart_enabled_list "")
 set(usart_config_list "")
 set(usart_port_enum_entries "")
@@ -1108,6 +1141,9 @@ file(WRITE "${CONFIG_HPP}"
 "} // namespace usart\n"
 "} // namespace bsp\n\n"
 "namespace app {\n"
+"namespace can {\n\n"
+"${can_app_binding_body}"
+"} // namespace can\n"
 "namespace uart {\n\n"
 "${uart_binding_body}\n\n"
 "inline constexpr bsp::usart::port dr16 = ${dr16_binding};\n"

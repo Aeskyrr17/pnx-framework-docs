@@ -169,6 +169,9 @@ inline constexpr std::array<bool, port_count> enabled = { true, true, true, true
 } // namespace bsp
 
 namespace app {
+namespace can {
+
+} // namespace can
 namespace uart {
 
 inline constexpr bsp::usart::port uart5 = 0;

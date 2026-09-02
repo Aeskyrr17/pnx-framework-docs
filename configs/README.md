@@ -20,6 +20,7 @@
 | `bindings.gpio_outputs.<name>` | object | 无 | 可选 GPIO 输出绑定，填写 `pin` 和 `active_level`。 |
 | `bindings.pwm_channels.<name>` | object | 无 | 可选 PWM 语义绑定，填写 `timer` 和 `channel`。 |
 | `bindings.adc_channels.<name>` | object | 无 | 可选 ADC 语义绑定，填写 `adc` 和 `channel`。 |
+| `bindings.can_buses.<name>` | string | 无 | 可选 CAN 语义绑定，填写已在 `board.ioc` 启用的 FDCAN 名称，例如 `fdcan2`。 |
 | `can.<fdcan>.id_type` | string | IOC 推导 | 指定某路 CAN 接收过滤 ID 类型，可选 `standard` 或 `extended`。例如 `can.fdcan1.id_type`。手动配置优先于 IOC 推导。 |
 | `ahrs.imu_offset_x` | number | `0.0` | IMU X 轴安装偏置。 |
 | `ahrs.imu_thread_priority` | number | `3` | AHRS/IMU 线程优先级。 |
