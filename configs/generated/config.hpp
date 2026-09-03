@@ -172,6 +172,9 @@ namespace app {
 namespace can {
 
 } // namespace can
+namespace spi {
+
+} // namespace spi
 namespace uart {
 
 inline constexpr bsp::usart::port uart5 = 0;

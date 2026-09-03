@@ -677,6 +677,40 @@ endforeach()
 list(JOIN spi_config_list ", " spi_config_cpp)
 list(LENGTH PNX_IOC_SPI_HW spi_bus_count)
 
+# --- params.json: application SPI bindings ---
+# A binding gives application code a stable semantic name for an IOC-enabled
+# SPI instance. Board-owned devices continue to use board::device bindings.
+set(spi_app_binding_body "")
+string(JSON spi_app_binding_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings spi_buses)
+if(json_err)
+    set(spi_app_binding_count 0)
+endif()
+if(spi_app_binding_count GREATER 0)
+    math(EXPR spi_app_binding_last "${spi_app_binding_count} - 1")
+    foreach(index RANGE 0 ${spi_app_binding_last})
+        string(JSON role MEMBER "${params_json}" bindings spi_buses ${index})
+        _pnx_cpp_identifier("${role}" role_ident)
+        if(NOT role_ident STREQUAL role)
+            message(FATAL_ERROR "SPI role '${role}' must be a C++ identifier")
+        endif()
+
+        string(JSON spi_binding_type ERROR_VARIABLE json_err TYPE "${params_json}" bindings spi_buses ${role})
+        if(json_err OR NOT spi_binding_type STREQUAL "STRING")
+            message(FATAL_ERROR "SPI role '${role}' must name an SPI instance")
+        endif()
+        string(JSON spi_binding_bus GET "${params_json}" bindings spi_buses ${role})
+        string(TOLOWER "${spi_binding_bus}" spi_binding_bus)
+        pnx_ioc_hw_in_list("${PNX_IOC_SPI_HW}" "${spi_binding_bus}" spi_binding_bus_present)
+        if(NOT spi_binding_bus_present)
+            message(FATAL_ERROR
+                "SPI role '${role}' uses ${spi_binding_bus}, which is not present in ${IOC}")
+        endif()
+
+        string(APPEND spi_app_binding_body
+            "inline constexpr bsp::spi::bus ${role_ident} = bsp::spi::bus::${spi_binding_bus}${generated_semicolon_token}\n")
+    endforeach()
+endif()
+
 set(board_device_binding_body "")
 if(BOARD_HAS_BMI088)
     string(APPEND board_device_binding_body
@@ -1197,6 +1231,9 @@ file(WRITE "${CONFIG_HPP}"
 "namespace can {\n\n"
 "${can_app_binding_body}"
 "} // namespace can\n"
+"namespace spi {\n\n"
+"${spi_app_binding_body}"
+"} // namespace spi\n"
 "namespace uart {\n\n"
 "${uart_binding_body}\n\n"
 "inline constexpr bsp::usart::port dr16 = ${dr16_binding};\n"
