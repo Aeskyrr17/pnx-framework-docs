@@ -14,3 +14,8 @@ extern "C" void diagnose_start()
     // diagnose::usart::start();
     // diagnose::usb::start();
 }
+
+extern "C" void app_start()
+{
+    diagnose_start();
+}

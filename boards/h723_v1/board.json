@@ -13,15 +13,12 @@
     "backend": "fdcan",
     "buses": {
       "fdcan1": {
-        "capability": "fd_brs",
         "tdc": { "enabled": true, "offset": 13, "filter": 13 }
       },
       "fdcan2": {
-        "capability": "classic",
         "tdc": { "enabled": false, "offset": 0, "filter": 0 }
       },
       "fdcan3": {
-        "capability": "classic",
         "tdc": { "enabled": false, "offset": 0, "filter": 0 }
       }
     }

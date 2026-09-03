@@ -59,7 +59,6 @@ file(GLOB_RECURSE PNX_EMBEDDED_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_modules/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_libs/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/diagnose/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/demo/*.cpp"
 )
 
 if(NOT ENABLE_USBX)
@@ -103,7 +102,6 @@ file(GLOB_RECURSE PNX_EMBEDDED_HEADERS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_libs/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_libs/*.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/diagnose/*.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/demo/*.hpp"
 )
 
 if(NOT HAS_DMIMU)
