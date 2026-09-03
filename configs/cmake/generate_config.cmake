@@ -487,30 +487,8 @@ foreach(hw ${PNX_IOC_FDCAN_HW})
     endif()
     list(APPEND can_id_type_list "${can_id_type_expr}")
 
-    string(JSON board_tdc_enabled ERROR_VARIABLE json_err GET "${board_json}" can buses ${hw_lower} tdc enabled)
-    if(json_err)
-        set(board_tdc_enabled "false")
-    endif()
-    _pnx_json_bool_to_cmake("${board_tdc_enabled}" board_tdc_enabled_cmake)
-    if(board_tdc_enabled_cmake)
-        if(NOT ioc_can_capability STREQUAL "fd_brs")
-            message(FATAL_ERROR "board ${hw_lower} enables TDC but IOC FrameFormat is not FDCAN_FRAME_FD_BRS")
-        endif()
-        string(JSON board_tdc_offset GET "${board_json}" can buses ${hw_lower} tdc offset)
-        string(JSON board_tdc_filter GET "${board_json}" can buses ${hw_lower} tdc filter)
-        if(board_tdc_offset LESS 0 OR board_tdc_offset GREATER 127 OR
-           board_tdc_filter LESS 0 OR board_tdc_filter GREATER 127)
-            message(FATAL_ERROR "board ${hw_lower} TDC offset/filter must be in 0..127")
-        endif()
-        set(can_tdc_enabled "true")
-    else()
-        set(board_tdc_offset 0)
-        set(board_tdc_filter 0)
-        set(can_tdc_enabled "false")
-    endif()
-
     list(APPEND can_config_list
-        "{ true, handle_id::${hw_lower}, ${can_type_expr}, ${can_capability_expr}, ${can_id_type_expr}, { ${can_tdc_enabled}, ${board_tdc_offset}U, ${board_tdc_filter}U } }")
+        "{ true, handle_id::${hw_lower}, ${can_type_expr}, ${can_capability_expr}, ${can_id_type_expr} }")
 
     set("PNX_CAN_TYPE_${hw_lower}" "${ioc_can_type}")
     if(can_id_type_expr STREQUAL "id_type::extended")
@@ -1183,12 +1161,6 @@ file(WRITE "${CONFIG_HPP}"
 "enum class id_type : std::uint8_t { standard = 0, extended = 1 };\n"
 "enum class handle_id : std::uint8_t { none = 0, fdcan1, fdcan2, fdcan3 };\n"
 "enum class bus : std::uint8_t { ${can_bus_enum_entries} };\n\n"
-"struct tdc_config\n"
-"{\n"
-"    bool enabled = false;\n"
-"    std::uint8_t offset = 0;\n"
-"    std::uint8_t filter = 0;\n"
-"};\n\n"
 "struct bus_config\n"
 "{\n"
 "    bool enabled = false;\n"
@@ -1196,7 +1168,6 @@ file(WRITE "${CONFIG_HPP}"
 "    bus_type type = bus_type::classic;\n"
 "    bus_capability capability = bus_capability::classic;\n"
 "    id_type filter_id_type = id_type::standard;\n"
-"    tdc_config tdc{};\n"
 "};\n\n"
 "inline constexpr std::size_t bus_count = ${can_bus_count};\n"
 "inline constexpr std::size_t max_rx_callbacks = ${can_max_rx_callbacks};\n"

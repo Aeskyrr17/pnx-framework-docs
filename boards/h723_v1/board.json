@@ -9,20 +9,6 @@
       { "start": "0x30000000", "end": "0x30008000" }
     ]
   },
-  "can": {
-    "backend": "fdcan",
-    "buses": {
-      "fdcan1": {
-        "tdc": { "enabled": true, "offset": 13, "filter": 13 }
-      },
-      "fdcan2": {
-        "tdc": { "enabled": false, "offset": 0, "filter": 0 }
-      },
-      "fdcan3": {
-        "tdc": { "enabled": false, "offset": 0, "filter": 0 }
-      }
-    }
-  },
   "bindings": {
     "gpio_inputs": {
       "bmi088_gyro_drdy": { "pin": "pe12", "active_level": "high" }
