@@ -663,15 +663,25 @@ list(LENGTH PNX_IOC_UART_HW usart_port_count)
 set(spi_config_list "")
 set(spi_handle_enum_entries "none = 0")
 set(spi_bus_enum_entries "")
+set(spi_binding_cases "")
 set(spi_bus_index 0)
 foreach(hw ${PNX_IOC_SPI_HW})
     string(TOLOWER "${hw}" hw_lower)
+    pnx_hw_to_handle("${hw_lower}" spi_handle)
+    pnx_ioc_spi_has_irq("${PNX_IOC_LINES}" "${hw_lower}" spi_has_irq)
+    pnx_ioc_spi_has_dma("${PNX_IOC_LINES}" "${hw_lower}" "RX" spi_has_rx_dma)
+    pnx_ioc_spi_has_dma("${PNX_IOC_LINES}" "${hw_lower}" "TX" spi_has_tx_dma)
+    pnx_to_json_bool("${spi_has_irq}" spi_has_irq_cpp)
+    pnx_to_json_bool("${spi_has_rx_dma}" spi_has_rx_dma_cpp)
+    pnx_to_json_bool("${spi_has_tx_dma}" spi_has_tx_dma_cpp)
     list(APPEND spi_config_list "{ true, handle_id::${hw_lower} }")
     string(APPEND spi_handle_enum_entries ", ${hw_lower}")
     if(spi_bus_index GREATER 0)
         string(APPEND spi_bus_enum_entries ", ")
     endif()
     string(APPEND spi_bus_enum_entries "${hw_lower} = ${spi_bus_index}")
+    string(APPEND spi_binding_cases
+        "    case bus::${hw_lower}: out = { ${spi_handle}, ${spi_has_irq_cpp}, ${spi_has_rx_dma_cpp}, ${spi_has_tx_dma_cpp} }${generated_semicolon_token} return true${generated_semicolon_token}\n")
     math(EXPR spi_bus_index "${spi_bus_index} + 1")
 endforeach()
 list(JOIN spi_config_list ", " spi_config_cpp)
@@ -1293,7 +1303,9 @@ file(WRITE "${BSP_BINDINGS_CPP}"
 "// Generated from board/board.ioc. Do not edit.\n\n"
 "#include \"bsp_adc.hpp\"\n"
 "#include \"bsp_pwm.hpp\"\n"
+"#include \"bsp_spi.hpp\"\n"
 "#include \"adc.h\"\n"
+"#include \"spi.h\"\n"
 "#include \"tim.h\"\n\n"
 "namespace bsp::pwm::detail {\n\n"
 "bool binding_for(channel channel_id, binding& out) noexcept\n"
@@ -1314,7 +1326,17 @@ file(WRITE "${BSP_BINDINGS_CPP}"
 "    default: return false${generated_semicolon_token}\n"
 "    }\n"
 "}\n\n"
-"} // namespace bsp::adc::detail\n")
+"} // namespace bsp::adc::detail\n\n"
+"namespace bsp::spi::detail {\n\n"
+"bool binding_for(bus bus_id, binding& out) noexcept\n"
+"{\n"
+"    switch (bus_id)\n"
+"    {\n"
+"${spi_binding_cases}"
+"    default: return false${generated_semicolon_token}\n"
+"    }\n"
+"}\n\n"
+"} // namespace bsp::spi::detail\n")
 file(READ "${BSP_BINDINGS_CPP}" bsp_bindings_raw)
 string(REPLACE "${generated_semicolon_token}" ";" bsp_bindings_fixed "${bsp_bindings_raw}")
 file(WRITE "${BSP_BINDINGS_CPP}" "${bsp_bindings_fixed}")

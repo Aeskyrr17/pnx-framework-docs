@@ -2,7 +2,9 @@
 
 #include "bsp_adc.hpp"
 #include "bsp_pwm.hpp"
+#include "bsp_spi.hpp"
 #include "adc.h"
+#include "spi.h"
 #include "tim.h"
 
 namespace bsp::pwm::detail {
@@ -31,3 +33,17 @@ bool binding_for(channel channel_id, binding& out) noexcept
 }
 
 } // namespace bsp::adc::detail
+
+namespace bsp::spi::detail {
+
+bool binding_for(bus bus_id, binding& out) noexcept
+{
+    switch (bus_id)
+    {
+    case bus::spi2: out = { &hspi2, true, true, true }; return true;
+    case bus::spi6: out = { &hspi6, false, false, false }; return true;
+    default: return false;
+    }
+}
+
+} // namespace bsp::spi::detail
