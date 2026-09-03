@@ -632,6 +632,7 @@ set(usart_enabled_list "")
 set(usart_config_list "")
 set(usart_port_enum_entries "")
 set(uart_binding_body "")
+set(uart_app_binding_body "")
 set(usart_port_index 0)
 
 foreach(hw ${PNX_IOC_UART_HW})
@@ -659,6 +660,45 @@ endforeach()
 list(JOIN usart_enabled_list ", " usart_enabled_cpp)
 list(JOIN usart_config_list ", " usart_config_cpp)
 list(LENGTH PNX_IOC_UART_HW usart_port_count)
+
+# --- params.json: application UART bindings ---
+set(uart_reserved_roles dr16 vt03 ps2 referee test_report)
+foreach(hw ${PNX_IOC_UART_HW})
+    string(TOLOWER "${hw}" hw_lower)
+    list(APPEND uart_reserved_roles "${hw_lower}")
+endforeach()
+string(JSON uart_app_binding_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings uart_ports)
+if(json_err)
+    set(uart_app_binding_count 0)
+endif()
+if(uart_app_binding_count GREATER 0)
+    math(EXPR uart_app_binding_last "${uart_app_binding_count} - 1")
+    foreach(index RANGE 0 ${uart_app_binding_last})
+        string(JSON role MEMBER "${params_json}" bindings uart_ports ${index})
+        _pnx_cpp_identifier("${role}" role_ident)
+        if(NOT role_ident STREQUAL role)
+            message(FATAL_ERROR "UART role '${role}' must be a C++ identifier")
+        endif()
+        list(FIND uart_reserved_roles "${role_ident}" uart_reserved_role_index)
+        if(NOT uart_reserved_role_index LESS 0)
+            message(FATAL_ERROR "UART role '${role}' conflicts with a generated app::uart name")
+        endif()
+
+        string(JSON uart_binding_type ERROR_VARIABLE json_err TYPE "${params_json}" bindings uart_ports ${role})
+        if(json_err OR NOT uart_binding_type STREQUAL "STRING")
+            message(FATAL_ERROR "UART role '${role}' must name a UART instance")
+        endif()
+        string(JSON uart_binding_port GET "${params_json}" bindings uart_ports ${role})
+        string(TOLOWER "${uart_binding_port}" uart_binding_port)
+        pnx_ioc_uart_index("${PNX_IOC_UART_HW}" "${uart_binding_port}" uart_binding_port_index)
+        if(uart_binding_port_index LESS 0)
+            message(FATAL_ERROR
+                "UART role '${role}' uses ${uart_binding_port}, which is not present in ${IOC}")
+        endif()
+        string(APPEND uart_app_binding_body
+            "inline constexpr bsp::usart::port ${role_ident} = ${uart_binding_port_index}${generated_semicolon_token}\n")
+    endforeach()
+endif()
 
 set(spi_config_list "")
 set(spi_handle_enum_entries "none = 0")
@@ -1246,6 +1286,7 @@ file(WRITE "${CONFIG_HPP}"
 "} // namespace spi\n"
 "namespace uart {\n\n"
 "${uart_binding_body}\n\n"
+"${uart_app_binding_body}"
 "inline constexpr bsp::usart::port dr16 = ${dr16_binding};\n"
 "inline constexpr bsp::usart::port vt03 = ${vt03_binding};\n"
 "inline constexpr bsp::usart::port ps2 = ${ps2_binding};\n"
