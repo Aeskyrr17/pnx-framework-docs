@@ -2,11 +2,9 @@
 
 `bsp::can` 提供已在板卡配置中声明的 CAN 总线初始化、发送和中断接收回调入口。
 
-## 什么时候使用
+## 注意
 
-它位于 BSP 层，在需要直接收发自定义 CAN 协议时使用：例如自定义的上下板的通信数据；电机、DMIMU 等设备会在内部直接调用，不需要直接操作 `bsp_can` 接口；
-
-使用前先确认[配置](../configuration.md)中的配置
+只在需要直接收发自定义 CAN 协议时调用，例如自定义上下板通信。电机、DMIMU 等已有设备会在内部使用 CAN，应用不需要直接操作 `bsp::can`。
 
 ## Header / Namespace
 
@@ -18,18 +16,43 @@
 
 在启动阶段或应用线程中，先注册接收回调，再初始化总线。`init()` 会配置过滤器、启用中断并启动 FDCAN
 
+以下示例假设已在 `params.json` 配置语义总线和收发 ID：
+
+```json
+{
+  "bindings": {
+    "can_buses": {
+      "chassis": {
+        "bus": "fdcan2",
+        "rx_header": "0x201",
+        "tx_header": "0x200"
+      }
+    }
+  }
+}
+```
+
+重新执行 CMake configure 后，生成 `app::can::chassis`、`app::can::chassis_rx_header` 和 `app::can::chassis_tx_header`。
+
 ```cpp
 // 使用片段：放在应用的初始化阶段。
 #include "bsp_can.hpp"
+
+#include <cstdint>
 
 namespace robot::application
 {
 namespace
 {
 
+constexpr bsp::can::bus chassis_bus = app::can::chassis;
+constexpr std::uint32_t chassis_feedback_id = app::can::chassis_rx_header;
+constexpr std::uint32_t chassis_command_id = app::can::chassis_tx_header;
+
+//回调函数
 void on_can_frame(bsp::can::bus bus, const bsp::can::rx_frame& frame) noexcept
 {
-    if (bus == bsp::can::bus::fdcan2 && frame.id == 0x201U && frame.len == 8U)
+    if (bus == chassis_bus && frame.id == chassis_feedback_id && frame.len == 8U)
     {
         // 只做快速的收帧处理；不要阻塞。
     }
@@ -37,17 +60,22 @@ void on_can_frame(bsp::can::bus bus, const bsp::can::rx_frame& frame) noexcept
 
 types::status init_custom_can() noexcept
 {
-    constexpr auto bus = bsp::can::bus::fdcan2;
-
     const auto callback =
-        bsp::can::rx_callback::bind<&on_can_frame>();
-    types::status status = bsp::can::register_rx_callback(bus, callback);
+        bsp::can::rx_callback::bind<&on_can_frame>(); //绑定回调函数
+    types::status status = bsp::can::register_rx_callback(chassis_bus, callback);
     if (status != types::status::ok)
     {
         return status;
     }
 
-    return bsp::can::init(bus);
+    return bsp::can::init(chassis_bus);
+}
+
+types::status send_chassis_command() noexcept
+{
+    constexpr std::uint8_t command[] = {0x01U, 0x02U, 0x03U};
+    return bsp::can::transmit(
+        chassis_bus, chassis_command_id, command, sizeof(command));
 }
 
 } // namespace
@@ -89,103 +117,38 @@ types::status init_custom_can() noexcept
 
 | 类型 | 调用者如何使用 |
 | --- | --- |
-| `bus` | 选择生成配置中的总线，例如 `bsp::can::bus::fdcan1`。 |
+| `bus` | 优先使用 `app::can::chassis` 这类语义总线名；它的值是生成的 `bsp::can::bus`。 |
 | `bus_type` | `classic` 或 `fd`。由生成配置决定；接收帧的 `format` 字段也使用这个类型。 |
 | `id_type` | `standard` 或 `extended`。它是生成的接收过滤器 ID 类型。 |
 
-此模块没有应用层的运行时 `config` 结构体；总线能力、接收 FIFO 和过滤器 ID 类型来自生成配置。
+此模块没有应用层的运行时 `config` 结构体；过滤器 ID 类型来自生成配置。Classic、FD 以及 FD 是否开启 BRS 由 CubeMX 在 `board.ioc` 中的 `FrameFormat` 决定。接收 FIFO 也是板级设置：BSP 直接使用 IOC 中启用的 FIFO0 或 FIFO1，应用和 JSON 都不需要、也不能选择它。
 
 ## 常用接口
 
-先按目的查找：
-
-| 我要做什么 | 接口 | 应在哪个上下文调用 |
-| --- | --- | --- |
-| 读取板卡配置 | `bus_enabled()`、`configured_bus_type()`、`filter_id_type_of()` | 启动或 ThreadX 线程 |
-| 启动总线 | `init()` | 启动或 ThreadX 线程 |
-| 发送一帧 | `transmit()` | 应用或设备线程 |
-| 收到帧时处理 | `register_rx_callback()` | 启动或 ThreadX 线程，在 `init()` 前 |
-| 移除所有接收处理 | `unregister_rx_callbacks()` | 接收 IRQ 已停止后 |
-| 重启或监测错误 | `restart()`、`err_sem()` | ThreadX 线程 |
-
-### `init(bus)`
-
-启动一条已配置的 CAN 总线。
-
-- Context：启动阶段或 ThreadX 线程；不要在 ISR 中调用。
-- Preconditions：`bus` 已由配置生成。
-- Return：成功为 `ok`；未配置的总线为 `not_configured`；枚举值无效为 `invalid_arg`；HAL 或 ThreadX 资源创建失败为 `error`。
-
-### `transmit(bus, id, data, len)`
-
-把一个数据帧加入该总线的发送 FIFO。
-
-- Context：应用或设备线程。当前接口没有发送锁；多个执行上下文不要同时调用它。
-- Blocking：不会等待发送完成；FIFO 无法加入报文时返回 `error`。
-- Ownership：在函数调用期间读取 `data`；调用返回后不再借用调用者缓冲区。
-- Preconditions：总线已成功 `init()`；`data` 非空、`len` 非零；Classic CAN 最多 8 字节，CAN FD 最多 64 字节；`id` 必须在当前生成的标准/扩展 ID 范围内。
-- Return：`ok` 只表示已加入发送 FIFO，不表示另一节点已经收到该帧。
-
-当前实现会把**生成的接收过滤器 ID 类型**也用于发送帧的 ID 类型。因此，一条总线不能通过这个 API 在标准 ID 和扩展 ID 间按帧切换。
-
-### `register_rx_callback(bus, callback)`
-
-为一条总线添加一个接收处理函数。
-
-- Context：启动或线程上下文，在 `init()` 前完成。
-- Blocking：否。
-- Lifetime：回调函数或绑定对象必须一直有效，直到调用 `unregister_rx_callbacks()`，或直到程序结束。
-- Return：`ok` 表示已登记；无效回调或总线枚举为 `invalid_arg`；未配置为 `not_configured`；回调槽已满时为 `error`。当前每条总线最多的槽数由生成配置的 `max_rx_callbacks` 决定。
-
-所有登记的回调都会收到该总线上每一帧；回调自身负责按 `bus`、`frame.id` 和长度筛选。
-
-### `unregister_rx_callbacks(bus)`
-
-清空一条总线上的**全部**接收回调，没有单独注销某一个回调的接口。
-
-不要在接收中断可能运行时调用它。当前实现不与 IRQ 同步，注销、注册和回调执行并发时会发生数据竞争。
-
-### `restart(bus)` 和 `err_sem(bus)`
-
-`restart()` 停止后重新启动一条已经初始化的总线，适合由线程中的故障恢复逻辑调用；失败返回 `error`。
-
-`err_sem()` 在 `init()` 成功后返回该总线的错误信号量，否则返回 `nullptr`。当前实现只会在 **Classic CAN** 的 warning、passive 或协议错误中置位这个信号量；CAN FD 和单独的 Bus-Off 不会通过它通知。除非你确实需要自己的错误恢复线程，通常不必使用它。
-
-### 查询生成配置
-
-`bus_enabled()`、`configured_bus_type()` 和 `filter_id_type_of()` 可用于读取生成配置；`handle_of()` 和 `bus_of()` 用于与 HAL 句柄衔接。普通应用通常不需要调用它们。
+| 接口 | 用途与注意事项 |
+| --- | --- |
+| `init(bus)` | 启动已配置总线。仅在启动或线程中调用；成功返回 `ok`。 |
+| `transmit(bus, id, data, len)` | 把一帧加入发送 FIFO。在线程中调用；不等待发送完成，`ok` 不代表对方收到。Classic CAN 最多 8 字节，CAN FD 最多 64 字节。 |
+| `register_rx_callback(bus, callback)` | 添加接收回调。应在 `init()` 前注册；回调目标必须长期存在。所有回调都会收到该总线上的每帧数据。 |
+| `unregister_rx_callbacks(bus)` | 清空该总线的全部回调。不能与接收中断并发调用。 |
+| `restart(bus)` | 在线程中停止并重新启动已初始化总线。 |
+| `err_sem(bus)` | 获取 Classic CAN 的部分错误信号量；通常只有自己的错误恢复线程才需要。 |
+| `bus_enabled()`、`configured_bus_type()`、`filter_id_type_of()` | 查询生成配置。普通应用通常不需要调用。 |
 
 `receive()` 和 `handle_error()` 是 HAL 回调桥接入口；上层应用不应直接调用。
 
-## 最小使用示例
-
-下面是发送一帧的使用片段。它假设前面的 `init_custom_can()` 已成功完成。
-
-```cpp
-#include <cstdint>
-
-const std::uint8_t command[] = {0x01U, 0x02U, 0x03U};
-const types::status status = bsp::can::transmit(
-    bsp::can::bus::fdcan2, 0x201U, command, sizeof(command));
-
-if (status != types::status::ok)
-{
-    // 处理未初始化、参数错误或发送 FIFO 已满等失败情况。
-}
-```
+上方的 `init_custom_can()` 和 `send_chassis_command()` 就是最小使用片段。
 
 ## 常见错误
 
 - 在回调里解析完整协议、等待信号量或发送 CAN。回调处于中断路径，应把后续工作交给线程。
-- 先启动总线、后注册回调。当前注册不会与 IRQ 同步，启动窗口内的帧可能没有业务处理者。
-- 把局部对象的成员函数注册为回调，然后离开作用域。回调保存的是非拥有引用。
-- 配置了标准 ID 过滤器，却期望通过 `transmit()` 发送扩展 ID（或相反）。当前 API 没有逐帧指定 ID 类型的参数。
-- 认为 `transmit()` 返回 `ok` 就代表报文已在总线上成功发送或对方已处理；它只表示进入发送 FIFO。
+- 先启动总线、后注册回调，或运行中清空回调；当前实现不与 IRQ 同步。
+- 把局部对象的成员函数注册为回调；回调保存的是非拥有引用。
+- 把 `transmit()` 的 `ok` 当作对端已收到；它只表示进入发送 FIFO。
 
 ## 相关内容
 
-- [第一个 PnX 应用](../guide/first-application.md)
 - [配置](../configuration.md)
-- [中断、回调、DMA 与消息通道](../concepts/interrupt-callback.md)
+- [通用回调](../concepts/interrupt-callback.md)
 - [公开头文件](../../pnx_bsp/can/include/bsp_can.hpp)
 - [实现](../../pnx_bsp/can/src/bsp_can.cpp)

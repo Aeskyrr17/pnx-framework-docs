@@ -1,0 +1,87 @@
+site_name: PnX Documentation
+
+theme:
+  name: material
+
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: 深色模式
+
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: 浅色模式
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+
+  - pymdownx.highlight:
+      anchor_linenums: true
+
+  - pymdownx.inlinehilite
+
+  - pymdownx.tabbed:
+      alternate_style: true
+
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - 首页: index.md
+
+  - 开始使用:
+      - 项目结构: project-structure.md
+      - 配置: configuration.md
+      - 配置参考: configuration-reference.md
+      - 启动流程: startup.md
+
+  - 理解 PnX:
+      - 线程: concepts/thread.md
+      - 通用回调: concepts/interrupt-callback.md
+
+  - API Reference:
+      - 总览: api/index.md
+      - BSP:
+          - CAN: api/bsp-can.md
+          - ADC: api/bsp-adc.md
+          - DMA 缓冲区: api/bsp-dma.md
+          - DWT 时间: api/bsp-dwt.md
+          - EXTI 外部中断: api/bsp-exti.md
+          - Flash: api/bsp-flash.md
+          - GPIO: api/bsp-gpio.md
+          - PWM: api/bsp-pwm.md
+          - SPI: api/bsp-spi.md
+          - USART: api/bsp-usart.md
+          - USB CDC: api/bsp-usb.md
+      - PnX Modules:
+          - AHRS: api/ahrs.md
+          - Referee: api/referee.md
+          - Remoter: api/remoter.md
+      - Devices:
+          - Motors: api/motors.md
+      - Libs:
+          - PnX Libs: api/libs.md
+
+  - 维护资料:
+      - 给 Agent 的项目资料: agent-context.md
