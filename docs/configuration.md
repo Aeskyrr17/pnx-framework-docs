@@ -8,7 +8,7 @@
 
 ## `boards/h723_v1/`
 当前选中的profile 会通过 `boards/h723_v1/board.json` 为工程配置开发板的固定配置，大部分情况下不会修改：
-例如 BMI088 使用的 SPI、CS 与 DRDY 引脚，以及 CAN 的 TDC 参数。
+例如 BMI088 使用的 SPI、CS 与 DRDY 引脚。
 这些配置对于同一块开发板（mc02或C板）通用，特殊情况下可以配合`.ioc`进行修改：例如需要的引脚太多，需修改常用配置才能满足开发需求。需要保证`.ioc` 与具体配置保持一致。
 
 ## `configs/params.json`：绑定外设与构建选择
@@ -100,7 +100,7 @@ cmake --build --preset Debug
 | 我想修改 | 应该修改 |
 | --- | --- |
 | MCU 型号、引脚、时钟、DMA、中断或外设模式 | `board/board.ioc`，然后用 CubeMX 生成代码 |
-| 板载 BMI088、LED 的固定连接，或板卡 CAN 的 TDC 参数 | 当前板卡 profile 的 `boards/h723_v1/board.json`，并确认与 IOC 一致 |
+| 板载 BMI088、LED 的固定连接 | 当前板卡 profile 的 `boards/h723_v1/board.json`，并确认与 IOC 一致 |
 | CAN 的接收 FIFO0 / FIFO1 | `board/board.ioc`。为每个 FDCAN 只启用一个接收 FIFO，再用 CubeMX 生成代码；不修改 JSON |
 | 是否构建 USBX、遥控器类型与 UART、服务运行参数 | `configs/params.json` |
 | 电机型号、CAN 总线、CAN ID、初始模式 | `configs/robot.json` 的 `devices.motors` |
