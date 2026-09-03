@@ -62,7 +62,6 @@ namespace can {
 enum class bus_type : std::uint8_t { classic = 0, fd = 1 };
 enum class bus_capability : std::uint8_t { classic = 0, fd_no_brs = 1, fd_brs = 2 };
 enum class id_type : std::uint8_t { standard = 0, extended = 1 };
-enum class rx_fifo : std::uint8_t { fifo0 = 0, fifo1 = 1 };
 enum class handle_id : std::uint8_t { none = 0, fdcan1, fdcan2, fdcan3 };
 enum class bus : std::uint8_t { fdcan1 = 0, fdcan2 = 1, fdcan3 = 2 };
 
@@ -80,13 +79,12 @@ struct bus_config
     bus_type type = bus_type::classic;
     bus_capability capability = bus_capability::classic;
     id_type filter_id_type = id_type::standard;
-    rx_fifo fifo = rx_fifo::fifo0;
     tdc_config tdc{};
 };
 
 inline constexpr std::size_t bus_count = 3;
 inline constexpr std::size_t max_rx_callbacks = 8;
-inline constexpr std::array<bus_config, bus_count> configs = {{ { true, handle_id::fdcan1, bus_type::fd, bus_capability::fd_brs, id_type::standard, rx_fifo::fifo1, { true, 13U, 13U } }, { true, handle_id::fdcan2, bus_type::classic, bus_capability::classic, id_type::standard, rx_fifo::fifo0, { false, 0U, 0U } }, { true, handle_id::fdcan3, bus_type::classic, bus_capability::classic, id_type::standard, rx_fifo::fifo0, { false, 0U, 0U } } }};
+inline constexpr std::array<bus_config, bus_count> configs = {{ { true, handle_id::fdcan1, bus_type::fd, bus_capability::fd_brs, id_type::standard, { true, 13U, 13U } }, { true, handle_id::fdcan2, bus_type::classic, bus_capability::classic, id_type::standard, { false, 0U, 0U } }, { true, handle_id::fdcan3, bus_type::classic, bus_capability::classic, id_type::standard, { false, 0U, 0U } } }};
 inline constexpr std::array<bool, bus_count> enabled = { true, true, true };
 inline constexpr std::array<bus_type, bus_count> configured_bus_types = { bus_type::fd, bus_type::classic, bus_type::classic };
 inline constexpr std::array<id_type, bus_count> filter_id_types = { id_type::standard, id_type::standard, id_type::standard };

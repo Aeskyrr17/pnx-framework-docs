@@ -496,16 +496,6 @@ foreach(hw ${PNX_IOC_FDCAN_HW})
     endif()
     list(APPEND can_id_type_list "${can_id_type_expr}")
 
-    string(JSON board_can_fifo ERROR_VARIABLE json_err GET "${board_json}" can buses ${hw_lower} rx_fifo)
-    string(TOLOWER "${board_can_fifo}" board_can_fifo)
-    if(board_can_fifo STREQUAL "fifo0")
-        set(can_fifo_expr "rx_fifo::fifo0")
-    elseif(board_can_fifo STREQUAL "fifo1")
-        set(can_fifo_expr "rx_fifo::fifo1")
-    else()
-        message(FATAL_ERROR "board ${hw_lower} rx_fifo must be fifo0 or fifo1")
-    endif()
-
     string(JSON board_tdc_enabled ERROR_VARIABLE json_err GET "${board_json}" can buses ${hw_lower} tdc enabled)
     if(json_err)
         set(board_tdc_enabled "false")
@@ -529,7 +519,7 @@ foreach(hw ${PNX_IOC_FDCAN_HW})
     endif()
 
     list(APPEND can_config_list
-        "{ true, handle_id::${hw_lower}, ${can_type_expr}, ${can_capability_expr}, ${can_id_type_expr}, ${can_fifo_expr}, { ${can_tdc_enabled}, ${board_tdc_offset}U, ${board_tdc_filter}U } }")
+        "{ true, handle_id::${hw_lower}, ${can_type_expr}, ${can_capability_expr}, ${can_id_type_expr}, { ${can_tdc_enabled}, ${board_tdc_offset}U, ${board_tdc_filter}U } }")
 
     set("PNX_CAN_TYPE_${hw_lower}" "${board_can_type}")
     if(can_id_type_expr STREQUAL "id_type::extended")
@@ -1200,7 +1190,6 @@ file(WRITE "${CONFIG_HPP}"
 "enum class bus_type : std::uint8_t { classic = 0, fd = 1 };\n"
 "enum class bus_capability : std::uint8_t { classic = 0, fd_no_brs = 1, fd_brs = 2 };\n"
 "enum class id_type : std::uint8_t { standard = 0, extended = 1 };\n"
-"enum class rx_fifo : std::uint8_t { fifo0 = 0, fifo1 = 1 };\n"
 "enum class handle_id : std::uint8_t { none = 0, fdcan1, fdcan2, fdcan3 };\n"
 "enum class bus : std::uint8_t { ${can_bus_enum_entries} };\n\n"
 "struct tdc_config\n"
@@ -1216,7 +1205,6 @@ file(WRITE "${CONFIG_HPP}"
 "    bus_type type = bus_type::classic;\n"
 "    bus_capability capability = bus_capability::classic;\n"
 "    id_type filter_id_type = id_type::standard;\n"
-"    rx_fifo fifo = rx_fifo::fifo0;\n"
 "    tdc_config tdc{};\n"
 "};\n\n"
 "inline constexpr std::size_t bus_count = ${can_bus_count};\n"

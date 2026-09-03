@@ -14,17 +14,14 @@
     "buses": {
       "fdcan1": {
         "capability": "fd_brs",
-        "rx_fifo": "fifo1",
         "tdc": { "enabled": true, "offset": 13, "filter": 13 }
       },
       "fdcan2": {
         "capability": "classic",
-        "rx_fifo": "fifo0",
         "tdc": { "enabled": false, "offset": 0, "filter": 0 }
       },
       "fdcan3": {
         "capability": "classic",
-        "rx_fifo": "fifo0",
         "tdc": { "enabled": false, "offset": 0, "filter": 0 }
       }
     }
