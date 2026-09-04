@@ -53,6 +53,3 @@ float control_dt() noexcept
 - 在普通线程中用较长 `delay_ms()`：它会阻塞该线程。
 
 ## 相关内容
-
-- [公开头文件](../../pnx_bsp/dwt/include/bsp_dwt.hpp)
-- [实现](../../pnx_bsp/dwt/src/bsp_dwt.cpp)

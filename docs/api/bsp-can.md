@@ -150,5 +150,3 @@ types::status send_chassis_command() noexcept
 
 - [配置](../configuration.md)
 - [通用回调](../concepts/interrupt-callback.md)
-- [公开头文件](../../pnx_bsp/can/include/bsp_can.hpp)
-- [实现](../../pnx_bsp/can/src/bsp_can.cpp)

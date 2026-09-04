@@ -110,6 +110,3 @@ void check_motors_alive() noexcept
 
 - [配置](../configuration.md)
 - [CAN](bsp-can.md)
-- [通用电机接口](../../pnx_devices/motors/motor/include/motor.hpp)
-- [电机服务](../../pnx_devices/motors/motor/include/motorservice.hpp)
-- [生成类型映射](../../pnx_devices/motors/motor/include/motortraits.hpp)

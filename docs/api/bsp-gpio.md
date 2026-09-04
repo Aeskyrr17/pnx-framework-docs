@@ -62,5 +62,3 @@ types::status poll_limit_switch() noexcept
 
 - [配置](../configuration.md)
 - [EXTI 外部中断](bsp-exti.md)
-- [公开头文件](../../pnx_bsp/gpio/include/bsp_gpio.hpp)
-- [实现](../../pnx_bsp/gpio/src/bsp_gpio.cpp)

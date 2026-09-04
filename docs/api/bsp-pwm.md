@@ -68,5 +68,3 @@ types::status start_output() noexcept
 ## 相关内容
 
 - [配置](../configuration.md)
-- [公开头文件](../../pnx_bsp/pwm/include/bsp_pwm.hpp)
-- [实现](../../pnx_bsp/pwm/src/bsp_pwm.cpp)

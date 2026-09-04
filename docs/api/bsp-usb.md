@@ -91,5 +91,3 @@ types::status init_usb() noexcept
 ## 相关内容
 
 - [配置](../configuration.md)
-- [公开头文件](../../pnx_bsp/usb/include/bsp_usb.hpp)
-- [实现](../../pnx_bsp/usb/src/bsp_usb.cpp)

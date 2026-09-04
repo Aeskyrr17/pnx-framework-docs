@@ -65,5 +65,3 @@ types::status read_sensor() noexcept
 
 - [DMA 缓冲区](bsp-dma.md)
 - [配置](../configuration.md)
-- [公开头文件](../../pnx_bsp/adc/include/bsp_adc.hpp)
-- [实现](../../pnx_bsp/adc/src/bsp_adc.cpp)

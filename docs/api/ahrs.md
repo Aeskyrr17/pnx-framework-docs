@@ -82,7 +82,7 @@ cfg.temperature_control_enabled = false;
 
 只有在 `robot.json` 启用 `devices.dmimu` 时，`HAS_DMIMU` 才为真，`robot_config.hpp` 才会生成 `robot::imu::dmimu` 的 CAN 传输配置。当前 DMIMU 只支持 Classic CAN。应用需要选择订阅哪一个服务的 `output()`；如果同时初始化两者，也必须自己决定控制逻辑使用哪一条姿态数据。
 
-DMIMU 服务的完整初始化写法可参考[诊断示例](../../diagnose/imu/imu_demo.cpp)。它发布的 `yaw`、`pitch`、`roll` 也会转换为弧度，以与 BMI088 输出保持一致。
+DMIMU 服务的完整初始化写法可参考诊断目录中的对应示例。它发布的 `yaw`、`pitch`、`roll` 也会转换为弧度，以与 BMI088 输出保持一致。
 
 ## 常见错误
 
@@ -95,6 +95,3 @@ DMIMU 服务的完整初始化写法可参考[诊断示例](../../diagnose/imu/i
 
 - [配置](../configuration.md)
 - [通用回调](../concepts/interrupt-callback.md)
-- [公开头文件](../../pnx_modules/ahrs/include/ahrs.hpp)
-- [IMU 数据类型](../../pnx_devices/imu/imu/include/imu.hpp)
-- [实现](../../pnx_modules/ahrs/src/ahrs.cpp)

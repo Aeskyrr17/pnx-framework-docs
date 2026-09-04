@@ -58,6 +58,3 @@ bsp::dma::buffer<64U> rx_buffer BSP_DMA_BUFFER{};
 - 用普通数组替代 `bsp::dma::buffer`：它没有所需的对齐和容量信息。
 
 ## 相关内容
-
-- [公开头文件](../../pnx_bsp/bsp/include/bsp_dma.hpp)
-- [实现](../../pnx_bsp/bsp/src/bsp_dma.cpp)

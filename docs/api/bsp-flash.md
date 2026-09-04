@@ -58,5 +58,3 @@ types::status save_calibration(std::uint32_t reserved_flash_addr) noexcept
 ## 相关内容
 
 - [配置](../configuration.md)
-- [公开头文件](../../pnx_bsp/flash/include/bsp_flash.hpp)
-- [实现](../../pnx_bsp/flash/src/bsp_flash.cpp)

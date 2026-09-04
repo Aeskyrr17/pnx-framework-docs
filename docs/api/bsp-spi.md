@@ -64,5 +64,3 @@ types::status send_sensor_command() noexcept
 
 - [DMA 缓冲区](bsp-dma.md)
 - [配置](../configuration.md)
-- [公开头文件](../../pnx_bsp/spi/include/bsp_spi.hpp)
-- [实现](../../pnx_bsp/spi/src/bsp_spi.cpp)

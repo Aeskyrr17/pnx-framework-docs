@@ -67,4 +67,4 @@ extern "C" void app_start()
 
 ## 相关内容
 
-- [启动流程](../startup.md)
+- [启动流程](startup.md)

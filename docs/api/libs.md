@@ -6,14 +6,14 @@
 
 | Namespace | 用来做什么 | 入口 |
 | --- | --- | --- |
-| `types` | 通用返回值，例如 `types::status::ok`、`error`、`busy`。 | [`usertypes.hpp`](../../pnx_libs/common/include/usertypes.hpp) |
-| `core` | 不分配内存的回调包装 `core::callback`；BSP 和模块注册回调时会用到。 | [`callback.hpp`](../../pnx_libs/common/include/callback.hpp) |
-| `msg` | 线程之间传递最新数据的消息通道。AHRS、Remoter 等模块使用它发布状态。 | [`msg.hpp`](../../pnx_libs/msg/include/msg.hpp) |
-| `control` | PID 控制器。 | [`pid.hpp`](../../pnx_libs/control/include/pid.hpp) |
-| `filter` | IIR 与一维卡尔曼滤波器。 | [`iir.hpp`](../../pnx_libs/filter/include/iir.hpp)、[`kalman_1d.hpp`](../../pnx_libs/filter/include/kalman_1d.hpp) |
-| `math` | 常量、限幅、坐标或数值转换。 | [`constants.hpp`](../../pnx_libs/math/include/constants.hpp)、[`constrain.hpp`](../../pnx_libs/math/include/constrain.hpp)、[`trans.hpp`](../../pnx_libs/math/include/trans.hpp) |
-| `crc` | CRC8、CRC16 校验；通常由协议模块内部使用。 | [`crc.hpp`](../../pnx_libs/crc/include/crc.hpp) |
-| `runtime` | 统计一次循环的耗时和超时次数。 | [`runtime_monitor.hpp`](../../pnx_libs/runtime/include/runtime_monitor.hpp) |
+| `types` | 通用返回值，例如 `types::status::ok`、`error`、`busy`。 |
+| `core` | 不分配内存的回调包装 `core::callback`；BSP 和模块注册回调时会用到。 |
+| `msg` | 线程之间传递最新数据的消息通道。AHRS、Remoter 等模块使用它发布状态。 |
+| `control` | PID 控制器。 |
+| `filter` | IIR 与一维卡尔曼滤波器。 |
+| `math` | 常量、限幅、坐标或数值转换。 |
+| `crc` | CRC8、CRC16 校验；通常由协议模块内部使用。 |
+| `runtime` | 统计一次循环的耗时和超时次数。 |
 
 `memory.h` 不提供 namespace；其中的 `BSP_DMA_BUFFER` 是 DMA 缓冲区用的变量属性。只有 DMA 相关缓冲区才需要使用它，详见 [DMA 缓冲区](bsp-dma.md)。
 
@@ -117,4 +117,3 @@ float update_speed_control(float target_speed, float measured_speed) noexcept
 
 - [通用回调](../concepts/interrupt-callback.md)
 - [DMA 缓冲区](bsp-dma.md)
-- [PID 公开头文件](../../pnx_libs/control/include/pid.hpp)

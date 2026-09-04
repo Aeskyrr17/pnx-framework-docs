@@ -64,5 +64,3 @@ types::status init_sensor_interrupt() noexcept
 
 - [通用回调](../concepts/interrupt-callback.md)
 - [GPIO](bsp-gpio.md)
-- [公开头文件](../../pnx_bsp/exti/include/bsp_exti.hpp)
-- [实现](../../pnx_bsp/exti/src/bsp_exti.cpp)

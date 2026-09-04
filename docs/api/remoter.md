@@ -134,7 +134,3 @@ types::status init_remoter() noexcept
 
 - [配置](../configuration.md)
 - [通用回调](../concepts/interrupt-callback.md)
-- [当前诊断示例](../../diagnose/remoter/remoter_demo.cpp)
-- [公开头文件](../../pnx_modules/remoter/include/remoter.hpp)
-- [输入类型定义](../../pnx_modules/remoter/include/types.hpp)
-- [实现](../../pnx_modules/remoter/src/remoter.cpp)

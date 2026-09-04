@@ -90,5 +90,3 @@ types::status init_link() noexcept
 
 - [DMA 缓冲区](bsp-dma.md)
 - [通用回调](../concepts/interrupt-callback.md)
-- [公开头文件](../../pnx_bsp/usart/include/bsp_usart.hpp)
-- [实现](../../pnx_bsp/usart/src/bsp_usart.cpp)

@@ -71,7 +71,7 @@ types::status init_referee() noexcept
 
 ## 能直接读取什么
 
-`referee_protocol.hpp` 定义了裁判协议中的数据结构和命令 ID；可从[协议定义](../../pnx_modules/referee/include/referee_protocol.hpp)查看字段含义。
+`referee_protocol.hpp` 定义了裁判协议中的数据结构和命令 ID。
 
 注意，协议中定义某个包，不表示当前服务已经解析它。只有 `packet_store` 中已有对应成员、且实现实际处理的包，才会被写入并能通过本模块读取。收到 CRC 正确但尚未支持的包时，回调仍会执行，但存储内容不会更新；CRC 或长度错误的帧不会触发回调，计数会记录在 `status()` 中。
 
@@ -98,5 +98,3 @@ types::status init_referee() noexcept
 
 - [配置](../configuration.md)
 - [通用回调](../concepts/interrupt-callback.md)
-- [公开头文件](../../pnx_modules/referee/include/referee.hpp)
-- [实现](../../pnx_modules/referee/src/referee.cpp)
