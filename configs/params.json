@@ -1,11 +1,6 @@
 {
   "build": {
-    "usbx": true,
-    "motors": {
-      "dji": true,
-      "dm": true,
-      "lk": false
-    }
+    "usbx": true
   },
   "bindings": {
     "remoter_uart": "uart5",
@@ -37,7 +32,8 @@
   "remoter": {
     "source": "dr16",
     "thread_priority": 2,
-    "rx_timeout_ticks": 100
+    "rx_timeout_ticks": 100,
+    "offline_timeout_ticks": 120
   },
   "referee": {
     "thread_priority": 8

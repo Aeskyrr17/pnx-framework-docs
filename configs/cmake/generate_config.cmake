@@ -2,14 +2,55 @@ cmake_minimum_required(VERSION 3.22)
 
 include(${CMAKE_CURRENT_LIST_DIR}/import_ioc.cmake)
 
-if(NOT DEFINED IOC OR NOT DEFINED PARAMS OR NOT DEFINED OUT_DIR)
-    message(FATAL_ERROR "generate_config.cmake requires -DIOC=... -DPARAMS=... -DOUT_DIR=...")
+if(NOT DEFINED IOC OR NOT DEFINED BOARD_CONFIG OR NOT DEFINED PARAMS OR NOT DEFINED OUT_DIR)
+    message(FATAL_ERROR "generate_config.cmake requires IOC, BOARD_CONFIG, PARAMS and OUT_DIR")
 endif()
 
 pnx_ioc_parse("${IOC}")
 
 file(READ "${PARAMS}" params_json)
+file(READ "${BOARD_CONFIG}" board_json)
 set(generated_semicolon_token "__PNX_GENERATED_SEMICOLON__")
+
+# --- board.json: memory policy ---
+string(JSON board_dma_policy GET "${board_json}" memory dma_policy)
+string(TOLOWER "${board_dma_policy}" board_dma_policy)
+if(board_dma_policy STREQUAL "dedicated_section")
+    set(PNX_DMA_DEDICATED_SECTION 1)
+elseif(board_dma_policy STREQUAL "default")
+    set(PNX_DMA_DEDICATED_SECTION 0)
+else()
+    message(FATAL_ERROR "board memory.dma_policy must be dedicated_section or default")
+endif()
+string(JSON PNX_DMA_CACHE_LINE_SIZE GET "${board_json}" memory cache_line_size)
+if(PNX_DMA_CACHE_LINE_SIZE LESS 1)
+    message(FATAL_ERROR "board memory.cache_line_size must be positive")
+endif()
+math(EXPR dma_cache_line_mask "${PNX_DMA_CACHE_LINE_SIZE} - 1")
+math(EXPR dma_cache_line_power_check "${PNX_DMA_CACHE_LINE_SIZE} & ${dma_cache_line_mask}")
+if(NOT dma_cache_line_power_check EQUAL 0)
+    message(FATAL_ERROR "board memory.cache_line_size must be a power of two")
+endif()
+
+set(dma_accessible_range_list "")
+string(JSON dma_accessible_range_count ERROR_VARIABLE json_err LENGTH "${board_json}" memory dma_accessible_ranges)
+if(json_err)
+    set(dma_accessible_range_count 0)
+endif()
+if(dma_accessible_range_count GREATER 0)
+    math(EXPR dma_accessible_range_last "${dma_accessible_range_count} - 1")
+    foreach(index RANGE 0 ${dma_accessible_range_last})
+        string(JSON dma_range_start GET "${board_json}" memory dma_accessible_ranges ${index} start)
+        string(JSON dma_range_end GET "${board_json}" memory dma_accessible_ranges ${index} end)
+        math(EXPR dma_range_start_value "${dma_range_start}")
+        math(EXPR dma_range_end_value "${dma_range_end}")
+        if(dma_range_end_value LESS_EQUAL dma_range_start_value)
+            message(FATAL_ERROR "board DMA accessible range ${index} has an invalid end")
+        endif()
+        list(APPEND dma_accessible_range_list "{ ${dma_range_start}UL, ${dma_range_end}UL }")
+    endforeach()
+endif()
+list(JOIN dma_accessible_range_list ", " dma_accessible_ranges_cpp)
 
 # --- params.json: build ---
 string(JSON build_usbx ERROR_VARIABLE json_err GET "${params_json}" build usbx)
@@ -21,19 +62,6 @@ if(build_usbx STREQUAL "true" OR build_usbx STREQUAL "1" OR build_usbx STREQUAL 
     set(params_usbx TRUE)
 else()
     set(params_usbx FALSE)
-endif()
-
-string(JSON motor_dji ERROR_VARIABLE json_err GET "${params_json}" build motors dji)
-if(json_err)
-    set(motor_dji "true")
-endif()
-string(JSON motor_dm ERROR_VARIABLE json_err GET "${params_json}" build motors dm)
-if(json_err)
-    set(motor_dm "true")
-endif()
-string(JSON motor_lk ERROR_VARIABLE json_err GET "${params_json}" build motors lk)
-if(json_err)
-    set(motor_lk "false")
 endif()
 
 function(_pnx_json_bool_to_cmake val out_var)
@@ -55,6 +83,15 @@ function(_pnx_can_id_type_expr val out_var)
     endif()
 endfunction()
 
+function(_pnx_can_header_literal value role direction max_id out_var)
+    math(EXPR header_value "${value}")
+    if(header_value LESS 0 OR header_value GREATER max_id)
+        message(FATAL_ERROR
+            "CAN role '${role}' ${direction}_header ${value} is outside the configured CAN ID range")
+    endif()
+    set(${out_var} "${header_value}U" PARENT_SCOPE)
+endfunction()
+
 function(_pnx_cpp_identifier input out_var)
     string(REGEX REPLACE "[^A-Za-z0-9_]" "_" ident "${input}")
     string(REGEX REPLACE "_+" "_" ident "${ident}")
@@ -67,10 +104,6 @@ function(_pnx_cpp_identifier input out_var)
     endif()
     set(${out_var} "${ident}" PARENT_SCOPE)
 endfunction()
-
-_pnx_json_bool_to_cmake("${motor_dji}" MOTOR_DJI)
-_pnx_json_bool_to_cmake("${motor_dm}" MOTOR_DM)
-_pnx_json_bool_to_cmake("${motor_lk}" MOTOR_LK)
 
 # --- robot.json: optional DMIMU build switch ---
 # Absence of devices.dmimu, or absence/false value of its enabled member,
@@ -98,6 +131,32 @@ if(DEFINED ROBOT_CONFIG AND EXISTS "${ROBOT_CONFIG}")
     endif()
 endif()
 
+# Motor protocol compilation follows the configured robot models. A separate
+# availability list would create two sources of truth.
+set(MOTOR_DJI OFF)
+set(MOTOR_DM OFF)
+set(MOTOR_LK OFF)
+set(MOTOR_XV2 OFF)
+if(NOT robot_json STREQUAL "")
+    string(JSON build_motor_count ERROR_VARIABLE json_err LENGTH "${robot_json}" devices motors list)
+    if(NOT json_err AND build_motor_count GREATER 0)
+        math(EXPR build_motor_last "${build_motor_count} - 1")
+        foreach(index RANGE 0 ${build_motor_last})
+            string(JSON build_motor_model GET "${robot_json}" devices motors list ${index} model)
+            string(TOLOWER "${build_motor_model}" build_motor_model)
+            if(build_motor_model MATCHES "^dji_")
+                set(MOTOR_DJI ON)
+            elseif(build_motor_model MATCHES "^dm_")
+                set(MOTOR_DM ON)
+            elseif(build_motor_model MATCHES "^lk_")
+                set(MOTOR_LK ON)
+            elseif(build_motor_model MATCHES "^xv2_")
+                set(MOTOR_XV2 ON)
+            endif()
+        endforeach()
+    endif()
+endif()
+
 # --- params.json: bindings ---
 string(JSON remoter_uart ERROR_VARIABLE json_err GET "${params_json}" bindings remoter_uart)
 if(json_err)
@@ -122,20 +181,20 @@ set(gpio_output_config_list "")
 set(gpio_output_enum_entries "")
 set(gpio_output_binding_body "")
 
-string(JSON gpio_input_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings gpio_inputs)
+string(JSON gpio_input_count ERROR_VARIABLE json_err LENGTH "${board_json}" bindings gpio_inputs)
 if(json_err)
     set(gpio_input_count 0)
 endif()
 if(gpio_input_count GREATER 0)
     math(EXPR gpio_input_last "${gpio_input_count} - 1")
     foreach(index RANGE 0 ${gpio_input_last})
-        string(JSON role MEMBER "${params_json}" bindings gpio_inputs ${index})
+        string(JSON role MEMBER "${board_json}" bindings gpio_inputs ${index})
         _pnx_cpp_identifier("${role}" role_ident)
         if(NOT role_ident STREQUAL role)
             message(FATAL_ERROR "GPIO input role '${role}' must be a C++ identifier")
         endif()
-        string(JSON pin GET "${params_json}" bindings gpio_inputs ${role} pin)
-        string(JSON active_level GET "${params_json}" bindings gpio_inputs ${role} active_level)
+        string(JSON pin GET "${board_json}" bindings gpio_inputs ${role} pin)
+        string(JSON active_level GET "${board_json}" bindings gpio_inputs ${role} active_level)
         string(TOLOWER "${pin}" pin)
         string(TOLOWER "${active_level}" active_level)
         if(NOT pin MATCHES "^p([a-k])([0-9]|1[0-5])$")
@@ -148,6 +207,9 @@ if(gpio_input_count GREATER 0)
         endif()
         string(TOUPPER "${pin}" pin_upper)
         pnx_ioc_get_value("${PNX_IOC_LINES}" "${pin_upper}.Signal" signal)
+        if(signal STREQUAL "")
+            pnx_ioc_get_value("${PNX_IOC_LINES}" "${pin_upper}_C.Signal" signal)
+        endif()
         if(NOT signal STREQUAL "GPIO_Input" AND NOT signal MATCHES "^GPXTI[0-9]+$")
             message(FATAL_ERROR "GPIO input role '${role}' pin ${pin} is not an IOC input")
         endif()
@@ -162,20 +224,20 @@ if(gpio_input_count GREATER 0)
     endforeach()
 endif()
 
-string(JSON gpio_output_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings gpio_outputs)
+string(JSON gpio_output_count ERROR_VARIABLE json_err LENGTH "${board_json}" bindings gpio_outputs)
 if(json_err)
     set(gpio_output_count 0)
 endif()
 if(gpio_output_count GREATER 0)
     math(EXPR gpio_output_last "${gpio_output_count} - 1")
     foreach(index RANGE 0 ${gpio_output_last})
-        string(JSON role MEMBER "${params_json}" bindings gpio_outputs ${index})
+        string(JSON role MEMBER "${board_json}" bindings gpio_outputs ${index})
         _pnx_cpp_identifier("${role}" role_ident)
         if(NOT role_ident STREQUAL role)
             message(FATAL_ERROR "GPIO output role '${role}' must be a C++ identifier")
         endif()
-        string(JSON pin GET "${params_json}" bindings gpio_outputs ${role} pin)
-        string(JSON active_level GET "${params_json}" bindings gpio_outputs ${role} active_level)
+        string(JSON pin GET "${board_json}" bindings gpio_outputs ${role} pin)
+        string(JSON active_level GET "${board_json}" bindings gpio_outputs ${role} active_level)
         string(TOLOWER "${pin}" pin)
         string(TOLOWER "${active_level}" active_level)
         if(NOT pin MATCHES "^p([a-k])([0-9]|1[0-5])$")
@@ -188,6 +250,9 @@ if(gpio_output_count GREATER 0)
         endif()
         string(TOUPPER "${pin}" pin_upper)
         pnx_ioc_get_value("${PNX_IOC_LINES}" "${pin_upper}.Signal" signal)
+        if(signal STREQUAL "")
+            pnx_ioc_get_value("${PNX_IOC_LINES}" "${pin_upper}_C.Signal" signal)
+        endif()
         if(NOT signal STREQUAL "GPIO_Output")
             message(FATAL_ERROR "GPIO output role '${role}' pin ${pin} is not an IOC output")
         endif()
@@ -204,14 +269,56 @@ endif()
 list(JOIN gpio_input_config_list ", " gpio_input_config_cpp)
 list(JOIN gpio_output_config_list ", " gpio_output_config_cpp)
 
-# --- HAS_* from IOC + bindings ---
-if(PNX_IOC_HAS_SPI2)
+# --- Board device bindings and feature availability ---
+string(JSON board_bmi088_enabled ERROR_VARIABLE json_err GET "${board_json}" devices bmi088 enabled)
+if(json_err)
+    set(board_bmi088_enabled "false")
+endif()
+_pnx_json_bool_to_cmake("${board_bmi088_enabled}" BOARD_HAS_BMI088)
+
+set(bmi088_spi "")
+set(bmi088_acc_cs "")
+set(bmi088_gyro_cs "")
+set(bmi088_gyro_drdy "")
+set(bmi088_heater_pwm "")
+set(HAS_BMI088_HEATER 0)
+if(BOARD_HAS_BMI088)
+    string(JSON bmi088_spi GET "${board_json}" devices bmi088 spi)
+    string(JSON bmi088_acc_cs GET "${board_json}" devices bmi088 acc_cs)
+    string(JSON bmi088_gyro_cs GET "${board_json}" devices bmi088 gyro_cs)
+    string(JSON bmi088_gyro_drdy GET "${board_json}" devices bmi088 gyro_drdy)
+    string(JSON bmi088_heater_pwm ERROR_VARIABLE json_err GET "${board_json}" devices bmi088 heater_pwm)
+    if(json_err)
+        set(bmi088_heater_pwm "")
+    else()
+        set(HAS_BMI088_HEATER 1)
+        string(JSON bmi088_heater_timer GET "${board_json}" bindings pwm_channels ${bmi088_heater_pwm} timer)
+        string(JSON bmi088_heater_channel GET "${board_json}" bindings pwm_channels ${bmi088_heater_pwm} channel)
+        string(TOLOWER "${bmi088_heater_timer}_ch${bmi088_heater_channel}" bmi088_heater_channel_ident)
+    endif()
+    string(TOLOWER "${bmi088_spi}" bmi088_spi)
+    pnx_ioc_hw_in_list("${PNX_IOC_SPI_HW}" "${bmi088_spi}" bmi088_spi_present)
+    if(NOT bmi088_spi_present)
+        message(FATAL_ERROR "board BMI088 binding requires ${bmi088_spi}, which is absent from the IOC")
+    endif()
     set(HAS_AHRS 1)
 else()
     set(HAS_AHRS 0)
 endif()
 
-if(PNX_IOC_HAS_SPI6)
+string(JSON board_led_enabled ERROR_VARIABLE json_err GET "${board_json}" devices led enabled)
+if(json_err)
+    set(board_led_enabled "false")
+endif()
+_pnx_json_bool_to_cmake("${board_led_enabled}" BOARD_HAS_LED)
+set(led_spi "")
+if(BOARD_HAS_LED)
+    string(JSON led_spi GET "${board_json}" devices led spi)
+    string(TOLOWER "${led_spi}" led_spi)
+    pnx_ioc_hw_in_list("${PNX_IOC_SPI_HW}" "${led_spi}" led_spi_present)
+    if(NOT led_spi_present)
+        message(FATAL_ERROR "board LED binding requires ${led_spi}, which is absent from the IOC")
+    endif()
     set(HAS_LED 1)
 else()
     set(HAS_LED 0)
@@ -321,10 +428,8 @@ else()
     set(ENABLE_USBX_C 0)
 endif()
 
-# --- BSP policy defaults (embedded, formerly board.json) ---
+# --- Board CAN policy ---
 set(can_max_rx_callbacks 8)
-set(tx_delay_tdc 13)
-set(tx_delay_filter 13)
 
 set(can_enabled_list "")
 set(can_type_list "")
@@ -338,8 +443,21 @@ foreach(hw ${PNX_IOC_FDCAN_HW})
 
     list(APPEND can_enabled_list "true")
 
-    pnx_ioc_fdcan_frame_format("${PNX_IOC_LINES}" "${hw_lower}" bus_type)
-    if(bus_type STREQUAL "fd")
+    pnx_ioc_fdcan_frame_format("${PNX_IOC_LINES}" "${hw_lower}" ioc_can_capability)
+    if(ioc_can_capability STREQUAL "classic")
+        set(can_capability_expr "bus_capability::classic")
+        set(ioc_can_type "classic")
+    elseif(ioc_can_capability STREQUAL "fd_no_brs")
+        set(can_capability_expr "bus_capability::fd_no_brs")
+        set(ioc_can_type "fd")
+    elseif(ioc_can_capability STREQUAL "fd_brs")
+        set(can_capability_expr "bus_capability::fd_brs")
+        set(ioc_can_type "fd")
+    else()
+        message(FATAL_ERROR
+            "IOC ${hw_lower}.FrameFormat must be FDCAN_FRAME_CLASSIC, FDCAN_FRAME_FD_NO_BRS, or FDCAN_FRAME_FD_BRS")
+    endif()
+    if(ioc_can_type STREQUAL "fd")
         set(can_type_expr "bus_type::fd")
     else()
         set(can_type_expr "bus_type::classic")
@@ -347,11 +465,18 @@ foreach(hw ${PNX_IOC_FDCAN_HW})
     list(APPEND can_type_list "${can_type_expr}")
 
     string(JSON manual_can_id_type ERROR_VARIABLE json_err GET "${params_json}" can ${hw_lower} id_type)
+    pnx_ioc_fdcan_std_filters("${PNX_IOC_LINES}" "${hw_lower}" std_filters)
+    pnx_ioc_fdcan_ext_filters("${PNX_IOC_LINES}" "${hw_lower}" ext_filters)
     if(NOT json_err AND NOT manual_can_id_type STREQUAL "")
         _pnx_can_id_type_expr("${manual_can_id_type}" can_id_type_expr)
+        if(can_id_type_expr STREQUAL "id_type::standard" AND std_filters LESS 1)
+            message(FATAL_ERROR
+                "params.can.${hw_lower}.id_type=standard requires at least one standard filter in the IOC")
+        elseif(can_id_type_expr STREQUAL "id_type::extended" AND ext_filters LESS 1)
+            message(FATAL_ERROR
+                "params.can.${hw_lower}.id_type=extended requires at least one extended filter in the IOC")
+        endif()
     else()
-        pnx_ioc_fdcan_std_filters("${PNX_IOC_LINES}" "${hw_lower}" std_filters)
-        pnx_ioc_fdcan_ext_filters("${PNX_IOC_LINES}" "${hw_lower}" ext_filters)
         if(std_filters GREATER 0)
             set(can_id_type_expr "id_type::standard")
         elseif(ext_filters GREATER 0)
@@ -361,7 +486,16 @@ foreach(hw ${PNX_IOC_FDCAN_HW})
         endif()
     endif()
     list(APPEND can_id_type_list "${can_id_type_expr}")
-    list(APPEND can_config_list "{ true, handle_id::${hw_lower}, ${can_type_expr}, ${can_id_type_expr} }")
+
+    list(APPEND can_config_list
+        "{ true, handle_id::${hw_lower}, ${can_type_expr}, ${can_capability_expr}, ${can_id_type_expr} }")
+
+    set("PNX_CAN_TYPE_${hw_lower}" "${ioc_can_type}")
+    if(can_id_type_expr STREQUAL "id_type::extended")
+        set("PNX_CAN_ID_TYPE_${hw_lower}" "extended")
+    else()
+        set("PNX_CAN_ID_TYPE_${hw_lower}" "standard")
+    endif()
 
     if(can_bus_index GREATER 0)
         string(APPEND can_bus_enum_entries ", ")
@@ -376,10 +510,88 @@ list(JOIN can_id_type_list ", " can_id_type_cpp)
 list(JOIN can_config_list ", " can_config_cpp)
 list(LENGTH PNX_IOC_FDCAN_HW can_bus_count)
 
+# --- params.json: application CAN bindings ---
+# A binding gives application code a stable semantic name for an IOC-enabled
+# FDCAN instance. Pins, timing and frame format remain board/CubeMX concerns.
+set(can_app_binding_body "")
+string(JSON can_app_binding_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings can_buses)
+if(json_err)
+    set(can_app_binding_count 0)
+endif()
+if(can_app_binding_count GREATER 0)
+    math(EXPR can_app_binding_last "${can_app_binding_count} - 1")
+    foreach(index RANGE 0 ${can_app_binding_last})
+        string(JSON role MEMBER "${params_json}" bindings can_buses ${index})
+        _pnx_cpp_identifier("${role}" role_ident)
+        if(NOT role_ident STREQUAL role)
+            message(FATAL_ERROR "CAN role '${role}' must be a C++ identifier")
+        endif()
+
+        string(JSON can_binding_type ERROR_VARIABLE json_err TYPE "${params_json}" bindings can_buses ${role})
+        if(json_err)
+            message(FATAL_ERROR "CAN role '${role}' requires a binding value")
+        endif()
+        set(can_binding_rx_header "")
+        set(can_binding_tx_header "")
+        if(can_binding_type STREQUAL "STRING")
+            # Legacy shorthand: the role specifies only its FDCAN instance.
+            string(JSON can_binding_bus GET "${params_json}" bindings can_buses ${role})
+        elseif(can_binding_type STREQUAL "OBJECT")
+            string(JSON can_binding_bus_type ERROR_VARIABLE json_err TYPE "${params_json}" bindings can_buses ${role} bus)
+            if(json_err OR NOT can_binding_bus_type STREQUAL "STRING")
+                message(FATAL_ERROR "CAN role '${role}' requires string field bus")
+            endif()
+            string(JSON can_binding_bus GET "${params_json}" bindings can_buses ${role} bus)
+            foreach(direction rx tx)
+                string(JSON can_binding_header_type ERROR_VARIABLE json_err TYPE "${params_json}" bindings can_buses ${role} ${direction}_header)
+                if(NOT json_err)
+                    if(NOT can_binding_header_type STREQUAL "STRING" AND
+                       NOT can_binding_header_type STREQUAL "NUMBER")
+                        message(FATAL_ERROR
+                            "CAN role '${role}' ${direction}_header must be a number or numeric string")
+                    endif()
+                    string(JSON can_binding_${direction}_header GET "${params_json}" bindings can_buses ${role} ${direction}_header)
+                endif()
+            endforeach()
+        else()
+            message(FATAL_ERROR "CAN role '${role}' must be a string or object")
+        endif()
+        if(can_binding_bus STREQUAL "")
+            message(FATAL_ERROR "CAN role '${role}' requires an FDCAN instance name")
+        endif()
+        string(TOLOWER "${can_binding_bus}" can_binding_bus)
+        pnx_ioc_hw_in_list("${PNX_IOC_FDCAN_HW}" "${can_binding_bus}" can_binding_bus_present)
+        if(NOT can_binding_bus_present)
+            message(FATAL_ERROR
+                "CAN role '${role}' uses ${can_binding_bus}, which is not present in ${IOC}")
+        endif()
+
+        string(APPEND can_app_binding_body
+            "inline constexpr bsp::can::bus ${role_ident} = bsp::can::bus::${can_binding_bus}${generated_semicolon_token}\n")
+        set(can_binding_id_type_var "PNX_CAN_ID_TYPE_${can_binding_bus}")
+        if("${${can_binding_id_type_var}}" STREQUAL "extended")
+            set(can_binding_max_id 0x1FFFFFFF)
+        else()
+            set(can_binding_max_id 0x7FF)
+        endif()
+        if(NOT can_binding_rx_header STREQUAL "")
+            _pnx_can_header_literal("${can_binding_rx_header}" "${role}" "rx" ${can_binding_max_id} can_binding_rx_header_cpp)
+            string(APPEND can_app_binding_body
+                "inline constexpr std::uint32_t ${role_ident}_rx_header = ${can_binding_rx_header_cpp}${generated_semicolon_token}\n")
+        endif()
+        if(NOT can_binding_tx_header STREQUAL "")
+            _pnx_can_header_literal("${can_binding_tx_header}" "${role}" "tx" ${can_binding_max_id} can_binding_tx_header_cpp)
+            string(APPEND can_app_binding_body
+                "inline constexpr std::uint32_t ${role_ident}_tx_header = ${can_binding_tx_header_cpp}${generated_semicolon_token}\n")
+        endif()
+    endforeach()
+endif()
+
 set(usart_enabled_list "")
 set(usart_config_list "")
 set(usart_port_enum_entries "")
 set(uart_binding_body "")
+set(uart_app_binding_body "")
 set(usart_port_index 0)
 
 foreach(hw ${PNX_IOC_UART_HW})
@@ -408,18 +620,126 @@ list(JOIN usart_enabled_list ", " usart_enabled_cpp)
 list(JOIN usart_config_list ", " usart_config_cpp)
 list(LENGTH PNX_IOC_UART_HW usart_port_count)
 
-if(PNX_IOC_HAS_SPI2)
-    set(spi2_enabled "true")
-else()
-    set(spi2_enabled "false")
+# --- params.json: application UART bindings ---
+set(uart_reserved_roles dr16 vt03 ps2 referee test_report)
+foreach(hw ${PNX_IOC_UART_HW})
+    string(TOLOWER "${hw}" hw_lower)
+    list(APPEND uart_reserved_roles "${hw_lower}")
+endforeach()
+string(JSON uart_app_binding_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings uart_ports)
+if(json_err)
+    set(uart_app_binding_count 0)
 endif()
-if(PNX_IOC_HAS_SPI6)
-    set(spi6_enabled "true")
-else()
-    set(spi6_enabled "false")
+if(uart_app_binding_count GREATER 0)
+    math(EXPR uart_app_binding_last "${uart_app_binding_count} - 1")
+    foreach(index RANGE 0 ${uart_app_binding_last})
+        string(JSON role MEMBER "${params_json}" bindings uart_ports ${index})
+        _pnx_cpp_identifier("${role}" role_ident)
+        if(NOT role_ident STREQUAL role)
+            message(FATAL_ERROR "UART role '${role}' must be a C++ identifier")
+        endif()
+        list(FIND uart_reserved_roles "${role_ident}" uart_reserved_role_index)
+        if(NOT uart_reserved_role_index LESS 0)
+            message(FATAL_ERROR "UART role '${role}' conflicts with a generated app::uart name")
+        endif()
+
+        string(JSON uart_binding_type ERROR_VARIABLE json_err TYPE "${params_json}" bindings uart_ports ${role})
+        if(json_err OR NOT uart_binding_type STREQUAL "STRING")
+            message(FATAL_ERROR "UART role '${role}' must name a UART instance")
+        endif()
+        string(JSON uart_binding_port GET "${params_json}" bindings uart_ports ${role})
+        string(TOLOWER "${uart_binding_port}" uart_binding_port)
+        pnx_ioc_uart_index("${PNX_IOC_UART_HW}" "${uart_binding_port}" uart_binding_port_index)
+        if(uart_binding_port_index LESS 0)
+            message(FATAL_ERROR
+                "UART role '${role}' uses ${uart_binding_port}, which is not present in ${IOC}")
+        endif()
+        string(APPEND uart_app_binding_body
+            "inline constexpr bsp::usart::port ${role_ident} = ${uart_binding_port_index}${generated_semicolon_token}\n")
+    endforeach()
 endif()
-set(spi_bus_count 2)
-set(spi_config_cpp "{ ${spi2_enabled}, handle_id::spi2 }, { ${spi6_enabled}, handle_id::spi6 }")
+
+set(spi_config_list "")
+set(spi_handle_enum_entries "none = 0")
+set(spi_bus_enum_entries "")
+set(spi_binding_cases "")
+set(spi_bus_index 0)
+foreach(hw ${PNX_IOC_SPI_HW})
+    string(TOLOWER "${hw}" hw_lower)
+    pnx_hw_to_handle("${hw_lower}" spi_handle)
+    pnx_ioc_spi_has_irq("${PNX_IOC_LINES}" "${hw_lower}" spi_has_irq)
+    pnx_ioc_spi_has_dma("${PNX_IOC_LINES}" "${hw_lower}" "RX" spi_has_rx_dma)
+    pnx_ioc_spi_has_dma("${PNX_IOC_LINES}" "${hw_lower}" "TX" spi_has_tx_dma)
+    pnx_to_json_bool("${spi_has_irq}" spi_has_irq_cpp)
+    pnx_to_json_bool("${spi_has_rx_dma}" spi_has_rx_dma_cpp)
+    pnx_to_json_bool("${spi_has_tx_dma}" spi_has_tx_dma_cpp)
+    list(APPEND spi_config_list "{ true, handle_id::${hw_lower} }")
+    string(APPEND spi_handle_enum_entries ", ${hw_lower}")
+    if(spi_bus_index GREATER 0)
+        string(APPEND spi_bus_enum_entries ", ")
+    endif()
+    string(APPEND spi_bus_enum_entries "${hw_lower} = ${spi_bus_index}")
+    string(APPEND spi_binding_cases
+        "    case bus::${hw_lower}: out = { ${spi_handle}, ${spi_has_irq_cpp}, ${spi_has_rx_dma_cpp}, ${spi_has_tx_dma_cpp} }${generated_semicolon_token} return true${generated_semicolon_token}\n")
+    math(EXPR spi_bus_index "${spi_bus_index} + 1")
+endforeach()
+list(JOIN spi_config_list ", " spi_config_cpp)
+list(LENGTH PNX_IOC_SPI_HW spi_bus_count)
+
+# --- params.json: application SPI bindings ---
+# A binding gives application code a stable semantic name for an IOC-enabled
+# SPI instance. Board-owned devices continue to use board::device bindings.
+set(spi_app_binding_body "")
+string(JSON spi_app_binding_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings spi_buses)
+if(json_err)
+    set(spi_app_binding_count 0)
+endif()
+if(spi_app_binding_count GREATER 0)
+    math(EXPR spi_app_binding_last "${spi_app_binding_count} - 1")
+    foreach(index RANGE 0 ${spi_app_binding_last})
+        string(JSON role MEMBER "${params_json}" bindings spi_buses ${index})
+        _pnx_cpp_identifier("${role}" role_ident)
+        if(NOT role_ident STREQUAL role)
+            message(FATAL_ERROR "SPI role '${role}' must be a C++ identifier")
+        endif()
+
+        string(JSON spi_binding_type ERROR_VARIABLE json_err TYPE "${params_json}" bindings spi_buses ${role})
+        if(json_err OR NOT spi_binding_type STREQUAL "STRING")
+            message(FATAL_ERROR "SPI role '${role}' must name an SPI instance")
+        endif()
+        string(JSON spi_binding_bus GET "${params_json}" bindings spi_buses ${role})
+        string(TOLOWER "${spi_binding_bus}" spi_binding_bus)
+        pnx_ioc_hw_in_list("${PNX_IOC_SPI_HW}" "${spi_binding_bus}" spi_binding_bus_present)
+        if(NOT spi_binding_bus_present)
+            message(FATAL_ERROR
+                "SPI role '${role}' uses ${spi_binding_bus}, which is not present in ${IOC}")
+        endif()
+
+        string(APPEND spi_app_binding_body
+            "inline constexpr bsp::spi::bus ${role_ident} = bsp::spi::bus::${spi_binding_bus}${generated_semicolon_token}\n")
+    endforeach()
+endif()
+
+set(board_device_binding_body "")
+if(BOARD_HAS_BMI088)
+    string(APPEND board_device_binding_body
+        "namespace bmi088 {\n"
+        "inline constexpr bsp::spi::bus spi = bsp::spi::bus::${bmi088_spi}${generated_semicolon_token}\n"
+        "inline constexpr bsp::gpio::output acc_cs = bsp::gpio::output::${bmi088_acc_cs}${generated_semicolon_token}\n"
+        "inline constexpr bsp::gpio::output gyro_cs = bsp::gpio::output::${bmi088_gyro_cs}${generated_semicolon_token}\n"
+        "inline constexpr bsp::gpio::input gyro_drdy = bsp::gpio::input::${bmi088_gyro_drdy}${generated_semicolon_token}\n")
+    if(HAS_BMI088_HEATER)
+        string(APPEND board_device_binding_body
+            "inline constexpr bsp::pwm::channel heater = bsp::pwm::channel::${bmi088_heater_channel_ident}${generated_semicolon_token}\n")
+    endif()
+    string(APPEND board_device_binding_body "} // namespace bmi088\n\n")
+endif()
+if(BOARD_HAS_LED)
+    string(APPEND board_device_binding_body
+        "namespace led {\n"
+        "inline constexpr bsp::spi::bus spi = bsp::spi::bus::${led_spi}${generated_semicolon_token}\n"
+        "} // namespace led\n")
+endif()
 
 set(pwm_channel_config_list "")
 set(pwm_channel_enum_entries "")
@@ -452,20 +772,20 @@ list(JOIN pwm_channel_config_list ", " pwm_config_cpp)
 list(LENGTH PNX_IOC_PWM_CHANNELS pwm_channel_count)
 
 set(pwm_app_binding_body "")
-string(JSON pwm_app_binding_count ERROR_VARIABLE json_err LENGTH "${params_json}" bindings pwm_channels)
+string(JSON pwm_app_binding_count ERROR_VARIABLE json_err LENGTH "${board_json}" bindings pwm_channels)
 if(json_err)
     set(pwm_app_binding_count 0)
 endif()
 if(pwm_app_binding_count GREATER 0)
     math(EXPR pwm_app_binding_last "${pwm_app_binding_count} - 1")
     foreach(index RANGE 0 ${pwm_app_binding_last})
-        string(JSON role MEMBER "${params_json}" bindings pwm_channels ${index})
+        string(JSON role MEMBER "${board_json}" bindings pwm_channels ${index})
         _pnx_cpp_identifier("${role}" role_ident)
         if(NOT role_ident STREQUAL role)
             message(FATAL_ERROR "PWM role '${role}' must be a C++ identifier")
         endif()
-        string(JSON timer GET "${params_json}" bindings pwm_channels ${role} timer)
-        string(JSON channel_number GET "${params_json}" bindings pwm_channels ${role} channel)
+        string(JSON timer GET "${board_json}" bindings pwm_channels ${role} timer)
+        string(JSON channel_number GET "${board_json}" bindings pwm_channels ${role} channel)
         string(TOUPPER "${timer}" timer)
         set(resource "${timer}_CH${channel_number}")
         list(FIND PNX_IOC_PWM_CHANNELS "${resource}" resource_index)
@@ -691,6 +1011,11 @@ if(_line STREQUAL "")
     set(_line "  inline constexpr std::uint32_t rx_timeout_ticks = 100${generated_semicolon_token}\n")
 endif()
 string(APPEND params_remoter_body "${_line}")
+_pnx_param_uint("remoter" "offline_timeout_ticks" _line)
+if(_line STREQUAL "")
+    set(_line "  inline constexpr std::uint32_t offline_timeout_ticks = 120${generated_semicolon_token}\n")
+endif()
+string(APPEND params_remoter_body "${_line}")
 _pnx_param_uint("remoter" "ps2_offline_timeout_ticks" _line)
 if(_line STREQUAL "")
     set(_line "  inline constexpr std::uint32_t ps2_offline_timeout_ticks = 600${generated_semicolon_token}\n")
@@ -767,6 +1092,11 @@ if(MOTOR_LK)
 else()
     set(MOTOR_LK_C 0)
 endif()
+if(MOTOR_XV2)
+    set(MOTOR_XV2_C 1)
+else()
+    set(MOTOR_XV2_C 0)
+endif()
 
 file(MAKE_DIRECTORY "${OUT_DIR}")
 
@@ -783,6 +1113,7 @@ file(WRITE "${CONFIG_HPP}"
 "#define HW_HAS_USB ${HW_HAS_USB}\n"
 "#define ENABLE_USBX ${ENABLE_USBX_C}\n"
 "#define HAS_AHRS ${HAS_AHRS}\n"
+"#define HAS_BMI088_HEATER ${HAS_BMI088_HEATER}\n"
 "#define HAS_DMIMU ${HAS_DMIMU}\n"
 "#define HAS_REMOTER ${HAS_REMOTER}\n"
 "#define HAS_VT03 ${HAS_VT03}\n"
@@ -798,11 +1129,13 @@ file(WRITE "${CONFIG_HPP}"
 "#define CAN_DIAG_ENABLED ${CAN_DIAG_ENABLED}\n"
 "#define MOTOR_DJI ${MOTOR_DJI_C}\n"
 "#define MOTOR_DM ${MOTOR_DM_C}\n"
-"#define MOTOR_LK ${MOTOR_LK_C}\n\n"
+"#define MOTOR_LK ${MOTOR_LK_C}\n"
+"#define MOTOR_XV2 ${MOTOR_XV2_C}\n\n"
 "namespace config::feature {\n\n"
 "inline constexpr bool hw_has_usb = ${HW_HAS_USB};\n"
 "inline constexpr bool enable_usbx = ${ENABLE_USBX_C};\n"
 "inline constexpr bool has_ahrs = ${HAS_AHRS};\n"
+"inline constexpr bool has_bmi088_heater = ${HAS_BMI088_HEATER};\n"
 "inline constexpr bool has_dmimu = ${HAS_DMIMU};\n"
 "inline constexpr bool has_remoter = ${HAS_REMOTER};\n"
 "inline constexpr bool has_vt03 = ${HAS_VT03};\n"
@@ -817,12 +1150,14 @@ file(WRITE "${CONFIG_HPP}"
 "inline constexpr bool has_motors = ${HAS_MOTORS};\n"
 "inline constexpr bool motor_dji = ${MOTOR_DJI_C};\n"
 "inline constexpr bool motor_dm = ${MOTOR_DM_C};\n"
-"inline constexpr bool motor_lk = ${MOTOR_LK_C};\n\n"
+"inline constexpr bool motor_lk = ${MOTOR_LK_C};\n"
+"inline constexpr bool motor_xv2 = ${MOTOR_XV2_C};\n\n"
 "inline constexpr bool can_diag = ${CAN_DIAG_ENABLED};\n\n"
 "} // namespace config::feature\n\n"
 "namespace bsp {\n"
 "namespace can {\n\n"
 "enum class bus_type : std::uint8_t { classic = 0, fd = 1 };\n"
+"enum class bus_capability : std::uint8_t { classic = 0, fd_no_brs = 1, fd_brs = 2 };\n"
 "enum class id_type : std::uint8_t { standard = 0, extended = 1 };\n"
 "enum class handle_id : std::uint8_t { none = 0, fdcan1, fdcan2, fdcan3 };\n"
 "enum class bus : std::uint8_t { ${can_bus_enum_entries} };\n\n"
@@ -831,19 +1166,19 @@ file(WRITE "${CONFIG_HPP}"
 "    bool enabled = false;\n"
 "    handle_id handle = handle_id::none;\n"
 "    bus_type type = bus_type::classic;\n"
+"    bus_capability capability = bus_capability::classic;\n"
 "    id_type filter_id_type = id_type::standard;\n"
 "};\n\n"
 "inline constexpr std::size_t bus_count = ${can_bus_count};\n"
 "inline constexpr std::size_t max_rx_callbacks = ${can_max_rx_callbacks};\n"
-"inline constexpr std::uint32_t tx_delay_comp_tdc = ${tx_delay_tdc};\n"
-"inline constexpr std::uint32_t tx_delay_comp_filter = ${tx_delay_filter};\n\n"
 "inline constexpr std::array<bus_config, bus_count> configs = {{ ${can_config_cpp} }};\n"
 "inline constexpr std::array<bool, bus_count> enabled = { ${can_enabled_cpp} };\n"
 "inline constexpr std::array<bus_type, bus_count> configured_bus_types = { ${can_type_cpp} };\n"
 "inline constexpr std::array<id_type, bus_count> filter_id_types = { ${can_id_type_cpp} };\n\n"
 "} // namespace can\n\n"
 "namespace spi {\n\n"
-"enum class handle_id : std::uint8_t { none = 0, spi2, spi6 };\n\n"
+"enum class handle_id : std::uint8_t { ${spi_handle_enum_entries} };\n"
+"enum class bus : std::uint8_t { ${spi_bus_enum_entries} };\n\n"
 "struct bus_config\n"
 "{\n"
 "    bool enabled = false;\n"
@@ -893,8 +1228,15 @@ file(WRITE "${CONFIG_HPP}"
 "} // namespace usart\n"
 "} // namespace bsp\n\n"
 "namespace app {\n"
+"namespace can {\n\n"
+"${can_app_binding_body}"
+"} // namespace can\n"
+"namespace spi {\n\n"
+"${spi_app_binding_body}"
+"} // namespace spi\n"
 "namespace uart {\n\n"
 "${uart_binding_body}\n\n"
+"${uart_app_binding_body}"
 "inline constexpr bsp::usart::port dr16 = ${dr16_binding};\n"
 "inline constexpr bsp::usart::port vt03 = ${vt03_binding};\n"
 "inline constexpr bsp::usart::port ps2 = ${ps2_binding};\n"
@@ -911,6 +1253,15 @@ file(WRITE "${CONFIG_HPP}"
 "${adc_app_binding_body}"
 "\n} // namespace adc\n"
 "} // namespace app\n\n"
+"namespace board::memory {\n\n"
+"struct address_range { std::uintptr_t start${generated_semicolon_token} std::uintptr_t end${generated_semicolon_token} }${generated_semicolon_token}\n"
+"inline constexpr bool dma_dedicated_section = ${PNX_DMA_DEDICATED_SECTION}${generated_semicolon_token}\n"
+"inline constexpr std::size_t cache_line_size = ${PNX_DMA_CACHE_LINE_SIZE}U${generated_semicolon_token}\n"
+"inline constexpr std::array<address_range, ${dma_accessible_range_count}> dma_accessible_ranges = {{ ${dma_accessible_ranges_cpp} }}${generated_semicolon_token}\n\n"
+"} // namespace board::memory\n\n"
+"namespace board::device {\n\n"
+"${board_device_binding_body}"
+"} // namespace board::device\n\n"
 "namespace params::ahrs {\n"
 "${params_ahrs_body}"
 "} // namespace params::ahrs\n\n"
@@ -943,7 +1294,9 @@ file(WRITE "${BSP_BINDINGS_CPP}"
 "// Generated from board/board.ioc. Do not edit.\n\n"
 "#include \"bsp_adc.hpp\"\n"
 "#include \"bsp_pwm.hpp\"\n"
+"#include \"bsp_spi.hpp\"\n"
 "#include \"adc.h\"\n"
+"#include \"spi.h\"\n"
 "#include \"tim.h\"\n\n"
 "namespace bsp::pwm::detail {\n\n"
 "bool binding_for(channel channel_id, binding& out) noexcept\n"
@@ -964,7 +1317,17 @@ file(WRITE "${BSP_BINDINGS_CPP}"
 "    default: return false${generated_semicolon_token}\n"
 "    }\n"
 "}\n\n"
-"} // namespace bsp::adc::detail\n")
+"} // namespace bsp::adc::detail\n\n"
+"namespace bsp::spi::detail {\n\n"
+"bool binding_for(bus bus_id, binding& out) noexcept\n"
+"{\n"
+"    switch (bus_id)\n"
+"    {\n"
+"${spi_binding_cases}"
+"    default: return false${generated_semicolon_token}\n"
+"    }\n"
+"}\n\n"
+"} // namespace bsp::spi::detail\n")
 file(READ "${BSP_BINDINGS_CPP}" bsp_bindings_raw)
 string(REPLACE "${generated_semicolon_token}" ";" bsp_bindings_fixed "${bsp_bindings_raw}")
 file(WRITE "${BSP_BINDINGS_CPP}" "${bsp_bindings_fixed}")
@@ -989,6 +1352,8 @@ function(_pnx_motor_control_mode_expr mode out_var)
     string(TOLOWER "${mode}" mode_lower)
     if(mode_lower STREQUAL "" OR mode_lower STREQUAL "relax")
         set(${out_var} "::motors::mode::relax" PARENT_SCOPE)
+    elseif(mode_lower STREQUAL "current")
+        set(${out_var} "::motors::mode::current" PARENT_SCOPE)
     elseif(mode_lower STREQUAL "torque")
         set(${out_var} "::motors::mode::torque" PARENT_SCOPE)
     elseif(mode_lower STREQUAL "mit")
@@ -1000,7 +1365,7 @@ function(_pnx_motor_control_mode_expr mode out_var)
     elseif(mode_lower STREQUAL "multi")
         set(${out_var} "::motors::mode::multi" PARENT_SCOPE)
     else()
-        message(FATAL_ERROR "robot motor control_mode must be relax, torque, mit, pos_speed, speed, or multi")
+        message(FATAL_ERROR "robot motor control_mode must be relax, current, torque, mit, pos_speed, speed, or multi")
     endif()
 endfunction()
 
@@ -1029,7 +1394,7 @@ function(_pnx_motor_model_expr model out_var)
     endif()
 endfunction()
 
-set(robot_motors_body "")
+set(robot_motor_configs_body "")
 set(robot_motor_count 0)
 set(robot_has_dji 0)
 set(robot_has_dm 0)
@@ -1070,9 +1435,10 @@ if(DEFINED ROBOT_CONFIG AND EXISTS "${ROBOT_CONFIG}")
         if(NOT robot_dmimu_can_type_lower STREQUAL "classic")
             message(FATAL_ERROR "robot DMIMU only supports can_type=classic")
         endif()
-        pnx_ioc_fdcan_frame_format("${PNX_IOC_LINES}" "${robot_dmimu_can_bus_lower}" robot_dmimu_ioc_can_type)
-        if(NOT robot_dmimu_ioc_can_type STREQUAL "classic")
-            message(FATAL_ERROR "robot DMIMU requires ${robot_dmimu_can_bus_lower} to use Classic CAN in ${IOC}")
+        set(robot_dmimu_bus_type_var "PNX_CAN_TYPE_${robot_dmimu_can_bus_lower}")
+        if(NOT "${${robot_dmimu_bus_type_var}}" STREQUAL "classic")
+            message(FATAL_ERROR
+                "robot DMIMU requests classic CAN, but board ${robot_dmimu_can_bus_lower} is configured as ${${robot_dmimu_bus_type_var}}")
         endif()
 
         math(EXPR robot_dmimu_can_id_value "${robot_dmimu_can_id}")
@@ -1150,6 +1516,24 @@ if(DEFINED ROBOT_CONFIG AND EXISTS "${ROBOT_CONFIG}")
                 message(FATAL_ERROR "robot motor ${motor_name} can_type must be classic or fd")
             endif()
 
+            set(motor_bus_type_var "PNX_CAN_TYPE_${motor_can_bus_lower}")
+            if(NOT motor_can_type_lower STREQUAL "${${motor_bus_type_var}}")
+                message(FATAL_ERROR
+                    "robot motor ${motor_name} requests ${motor_can_type_lower}, but board ${motor_can_bus_lower} is configured as ${${motor_bus_type_var}}")
+            endif()
+
+            math(EXPR motor_can_id_value "${motor_can_id}")
+            set(motor_bus_id_type_var "PNX_CAN_ID_TYPE_${motor_can_bus_lower}")
+            if("${${motor_bus_id_type_var}}" STREQUAL "standard")
+                set(motor_can_id_max 2047)
+            else()
+                set(motor_can_id_max 536870911)
+            endif()
+            if(motor_can_id_value LESS 0 OR motor_can_id_value GREATER motor_can_id_max)
+                message(FATAL_ERROR
+                    "robot motor ${motor_name} CAN ID ${motor_can_id} is out of range for ${${motor_bus_id_type_var}} frames")
+            endif()
+
             _pnx_cpp_identifier("${motor_name}" motor_ident)
             string(REGEX MATCH "^[A-Za-z_][A-Za-z0-9_]*$" valid_ident "${motor_ident}")
             if(NOT valid_ident)
@@ -1171,7 +1555,7 @@ if(DEFINED ROBOT_CONFIG AND EXISTS "${ROBOT_CONFIG}")
                 set(robot_has_other 1)
             endif()
 
-            string(APPEND robot_motors_body
+            string(APPEND robot_motor_configs_body
                 "// ${motor_model}\n"
                 "inline constexpr model ${motor_ident}_model = ${motor_model_expr};\n"
                 "inline constexpr ::motors::config ${motor_ident}{\n"
@@ -1185,8 +1569,8 @@ if(DEFINED ROBOT_CONFIG AND EXISTS "${ROBOT_CONFIG}")
     endif()
 endif()
 
-if(robot_motors_body STREQUAL "")
-    set(robot_motors_body "// No motors are described in the robot device tree.\n")
+if(robot_motor_configs_body STREQUAL "")
+    set(robot_motor_configs_body "// No motors are described in the robot device tree.\n")
 endif()
 
 file(WRITE "${ROBOT_CONFIG_HPP}"
@@ -1220,7 +1604,7 @@ file(WRITE "${ROBOT_CONFIG_HPP}"
 "inline constexpr std::uint32_t master_id_base = ${robot_dm_master_id_base}U;\n"
 "inline constexpr std::size_t max_motors = ${robot_dm_max_motors};\n"
 "} // namespace dm\n\n"
-"${robot_motors_body}"
+"${robot_motor_configs_body}"
 "} // namespace robot::motors\n\n"
 "namespace robot::imu {\n\n"
 "inline constexpr bool has_dmimu = ${HAS_DMIMU};\n"

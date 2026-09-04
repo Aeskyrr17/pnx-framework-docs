@@ -1,9 +1,16 @@
 cmake_minimum_required(VERSION 3.22)
 
+set(PNX_BOARD "h723_v1" CACHE STRING "Selected PNX board profile")
+set(PNX_BOARD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/boards/${PNX_BOARD}")
+if(NOT EXISTS "${PNX_BOARD_DIR}/board.cmake" OR NOT EXISTS "${PNX_BOARD_DIR}/board.json")
+    message(FATAL_ERROR "Unknown or incomplete PNX_BOARD='${PNX_BOARD}'")
+endif()
+include("${PNX_BOARD_DIR}/board.cmake")
+
 if(NOT CMAKE_TOOLCHAIN_FILE)
     set(PNX_EMBEDDED_COMPILER_HINT "${CMAKE_C_COMPILER};${CMAKE_CXX_COMPILER}")
     if(PNX_EMBEDDED_COMPILER_HINT MATCHES "arm-none-eabi")
-        include("${CMAKE_CURRENT_SOURCE_DIR}/board/cmake/gcc-arm-none-eabi.cmake")
+        include("${PNX_BOARD_TOOLCHAIN}")
     endif()
     unset(PNX_EMBEDDED_COMPILER_HINT)
 endif()
@@ -21,21 +28,26 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PNX_EMBEDDED_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/configs")
 set(PNX_EMBEDDED_GENERATED_DIR "${PNX_EMBEDDED_CONFIG_DIR}/generated")
 set(PNX_EMBEDDED_ROBOT_CONFIG "${PNX_EMBEDDED_CONFIG_DIR}/robot.json")
+set(PNX_EMBEDDED_BOARD_CONFIG "${PNX_BOARD_DIR}/board.json")
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/board/board.ioc"
+    "${PNX_BOARD_IOC}"
+    "${PNX_EMBEDDED_BOARD_CONFIG}"
+    "${PNX_BOARD_DIR}/board.cmake"
     "${PNX_EMBEDDED_CONFIG_DIR}/params.json"
     "${PNX_EMBEDDED_ROBOT_CONFIG}"
     "${PNX_EMBEDDED_CONFIG_DIR}/cmake/generate_config.cmake"
     "${PNX_EMBEDDED_CONFIG_DIR}/cmake/import_ioc.cmake"
 )
 
-set(IOC "${CMAKE_CURRENT_SOURCE_DIR}/board/board.ioc")
+set(IOC "${PNX_BOARD_IOC}")
+set(BOARD_CONFIG "${PNX_EMBEDDED_BOARD_CONFIG}")
 set(PARAMS "${PNX_EMBEDDED_CONFIG_DIR}/params.json")
 set(ROBOT_CONFIG "${PNX_EMBEDDED_ROBOT_CONFIG}")
 set(OUT_DIR "${PNX_EMBEDDED_GENERATED_DIR}")
 include("${PNX_EMBEDDED_CONFIG_DIR}/cmake/generate_config.cmake")
 unset(IOC)
+unset(BOARD_CONFIG)
 unset(PARAMS)
 unset(ROBOT_CONFIG)
 unset(OUT_DIR)
@@ -46,7 +58,7 @@ file(GLOB_RECURSE PNX_EMBEDDED_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_devices/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_modules/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_libs/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/demo/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/diagnose/*.cpp"
 )
 
 if(NOT ENABLE_USBX)
@@ -55,6 +67,29 @@ endif()
 
 if(NOT HAS_DMIMU)
     list(FILTER PNX_EMBEDDED_SOURCES EXCLUDE REGEX "[/\\\\]pnx_devices[/\\\\]imu[/\\\\]dmimu[/\\\\]")
+endif()
+
+if(NOT MOTOR_DJI)
+    list(FILTER PNX_EMBEDDED_SOURCES EXCLUDE REGEX "[/\\\\]pnx_devices[/\\\\]motors[/\\\\]dji[/\\\\]")
+endif()
+if(NOT MOTOR_DM)
+    list(FILTER PNX_EMBEDDED_SOURCES EXCLUDE REGEX "[/\\\\]pnx_devices[/\\\\]motors[/\\\\]dm[/\\\\]")
+endif()
+if(NOT MOTOR_LK)
+    list(FILTER PNX_EMBEDDED_SOURCES EXCLUDE REGEX "[/\\\\]pnx_devices[/\\\\]motors[/\\\\]lk[/\\\\]")
+endif()
+if(NOT MOTOR_XV2)
+    list(FILTER PNX_EMBEDDED_SOURCES EXCLUDE REGEX "[/\\\\]pnx_devices[/\\\\]motors[/\\\\]xv2[/\\\\]")
+endif()
+
+if(NOT ENABLE_DR16)
+    list(FILTER PNX_EMBEDDED_SOURCES EXCLUDE REGEX "[/\\\\]pnx_modules[/\\\\]remoter[/\\\\]src[/\\\\]dr16\\.cpp$")
+endif()
+if(NOT ENABLE_VT03)
+    list(FILTER PNX_EMBEDDED_SOURCES EXCLUDE REGEX "[/\\\\]pnx_modules[/\\\\]remoter[/\\\\]src[/\\\\]vt03\\.cpp$")
+endif()
+if(NOT ENABLE_PS2)
+    list(FILTER PNX_EMBEDDED_SOURCES EXCLUDE REGEX "[/\\\\]pnx_modules[/\\\\]remoter[/\\\\]src[/\\\\]ps2\\.cpp$")
 endif()
 
 file(GLOB_RECURSE PNX_EMBEDDED_HEADERS CONFIGURE_DEPENDS
@@ -66,7 +101,7 @@ file(GLOB_RECURSE PNX_EMBEDDED_HEADERS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_modules/*.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_libs/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pnx_libs/*.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/demo/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/diagnose/*.hpp"
 )
 
 if(NOT HAS_DMIMU)
@@ -92,7 +127,7 @@ set(CMSIS_DSP_SOURCES
 
 add_executable(${PROJECT_NAME})
 
-add_subdirectory(board/cmake/stm32cubemx)
+add_subdirectory("${PNX_BOARD_CUBEMX_DIR}" "${CMAKE_BINARY_DIR}/stm32cubemx")
 
 target_sources(${PROJECT_NAME} PRIVATE
     ${PNX_EMBEDDED_SOURCES}
@@ -104,6 +139,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${PNX_EMBEDDED_INCLUDE_DIRS}
     "${CMAKE_CURRENT_SOURCE_DIR}/cmsis-dsp/Include"
     "${PNX_EMBEDDED_GENERATED_DIR}"
+)
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    PNX_DMA_DEDICATED_SECTION=${PNX_DMA_DEDICATED_SECTION}
+    PNX_DMA_CACHE_LINE_SIZE=${PNX_DMA_CACHE_LINE_SIZE}
+    ROBOT_MOTOR_COUNT=${robot_motor_count}
 )
 
 target_link_libraries(${PROJECT_NAME}

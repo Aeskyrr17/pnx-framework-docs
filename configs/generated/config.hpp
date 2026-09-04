@@ -8,6 +8,7 @@
 #define HW_HAS_USB 1
 #define ENABLE_USBX 1
 #define HAS_AHRS 1
+#define HAS_BMI088_HEATER 1
 #define HAS_DMIMU 1
 #define HAS_REMOTER 1
 #define HAS_VT03 1
@@ -25,12 +26,14 @@
 #define MOTOR_DJI 1
 #define MOTOR_DM 1
 #define MOTOR_LK 0
+#define MOTOR_XV2 0
 
 namespace config::feature {
 
 inline constexpr bool hw_has_usb = 1;
 inline constexpr bool enable_usbx = 1;
 inline constexpr bool has_ahrs = 1;
+inline constexpr bool has_bmi088_heater = 1;
 inline constexpr bool has_dmimu = 1;
 inline constexpr bool has_remoter = 1;
 inline constexpr bool has_vt03 = 1;
@@ -47,6 +50,7 @@ inline constexpr bool has_motors = 1;
 inline constexpr bool motor_dji = 1;
 inline constexpr bool motor_dm = 1;
 inline constexpr bool motor_lk = 0;
+inline constexpr bool motor_xv2 = 0;
 
 inline constexpr bool can_diag = 1;
 
@@ -56,6 +60,7 @@ namespace bsp {
 namespace can {
 
 enum class bus_type : std::uint8_t { classic = 0, fd = 1 };
+enum class bus_capability : std::uint8_t { classic = 0, fd_no_brs = 1, fd_brs = 2 };
 enum class id_type : std::uint8_t { standard = 0, extended = 1 };
 enum class handle_id : std::uint8_t { none = 0, fdcan1, fdcan2, fdcan3 };
 enum class bus : std::uint8_t { fdcan1 = 0, fdcan2 = 1, fdcan3 = 2 };
@@ -65,15 +70,13 @@ struct bus_config
     bool enabled = false;
     handle_id handle = handle_id::none;
     bus_type type = bus_type::classic;
+    bus_capability capability = bus_capability::classic;
     id_type filter_id_type = id_type::standard;
 };
 
 inline constexpr std::size_t bus_count = 3;
 inline constexpr std::size_t max_rx_callbacks = 8;
-inline constexpr std::uint32_t tx_delay_comp_tdc = 13;
-inline constexpr std::uint32_t tx_delay_comp_filter = 13;
-
-inline constexpr std::array<bus_config, bus_count> configs = {{ { true, handle_id::fdcan1, bus_type::fd, id_type::standard }, { true, handle_id::fdcan2, bus_type::classic, id_type::standard }, { true, handle_id::fdcan3, bus_type::classic, id_type::standard } }};
+inline constexpr std::array<bus_config, bus_count> configs = {{ { true, handle_id::fdcan1, bus_type::fd, bus_capability::fd_brs, id_type::standard }, { true, handle_id::fdcan2, bus_type::classic, bus_capability::classic, id_type::standard }, { true, handle_id::fdcan3, bus_type::classic, bus_capability::classic, id_type::standard } }};
 inline constexpr std::array<bool, bus_count> enabled = { true, true, true };
 inline constexpr std::array<bus_type, bus_count> configured_bus_types = { bus_type::fd, bus_type::classic, bus_type::classic };
 inline constexpr std::array<id_type, bus_count> filter_id_types = { id_type::standard, id_type::standard, id_type::standard };
@@ -83,6 +86,7 @@ inline constexpr std::array<id_type, bus_count> filter_id_types = { id_type::sta
 namespace spi {
 
 enum class handle_id : std::uint8_t { none = 0, spi2, spi6 };
+enum class bus : std::uint8_t { spi2 = 0, spi6 = 1 };
 
 struct bus_config
 {
@@ -99,16 +103,16 @@ namespace gpio {
 
 enum class port_id : std::uint8_t { none = 0, a, b, c, d, e, f, g, h, i, j, k };
 enum class active_level : std::uint8_t { low = 0, high = 1 };
-enum class input : std::uint8_t {  };
-enum class output : std::uint8_t {  };
+enum class input : std::uint8_t { bmi088_gyro_drdy = 0 };
+enum class output : std::uint8_t { bmi088_acc_cs = 0, bmi088_gyro_cs = 1 };
 
 struct input_config { port_id port; std::uint8_t pin; active_level active; };
 struct output_config { port_id port; std::uint8_t pin; active_level active; };
 
-inline constexpr std::size_t input_count = 0;
-inline constexpr std::size_t output_count = 0;
-inline constexpr std::array<input_config, input_count> input_configs = {{  }};
-inline constexpr std::array<output_config, output_count> output_configs = {{  }};
+inline constexpr std::size_t input_count = 1;
+inline constexpr std::size_t output_count = 2;
+inline constexpr std::array<input_config, input_count> input_configs = {{ { port_id::e, 12U, active_level::high } }};
+inline constexpr std::array<output_config, output_count> output_configs = {{ { port_id::c, 0U, active_level::low }, { port_id::c, 3U, active_level::low } }};
 
 } // namespace gpio
 
@@ -155,6 +159,12 @@ inline constexpr std::array<bool, port_count> enabled = { true, true, true, true
 } // namespace bsp
 
 namespace app {
+namespace can {
+
+} // namespace can
+namespace spi {
+
+} // namespace spi
 namespace uart {
 
 inline constexpr bsp::usart::port uart5 = 0;
@@ -172,11 +182,15 @@ inline constexpr bsp::usart::port test_report = uart7;
 
 namespace gpio {
 
+inline constexpr bsp::gpio::input bmi088_gyro_drdy = bsp::gpio::input::bmi088_gyro_drdy;
+inline constexpr bsp::gpio::output bmi088_acc_cs = bsp::gpio::output::bmi088_acc_cs;
+inline constexpr bsp::gpio::output bmi088_gyro_cs = bsp::gpio::output::bmi088_gyro_cs;
 
 } // namespace gpio
 
 namespace pwm {
 
+inline constexpr bsp::pwm::channel bmi088_heater = bsp::pwm::channel::tim3_ch4;
 
 } // namespace pwm
 
@@ -185,6 +199,30 @@ namespace adc {
 
 } // namespace adc
 } // namespace app
+
+namespace board::memory {
+
+struct address_range { std::uintptr_t start; std::uintptr_t end; };
+inline constexpr bool dma_dedicated_section = 1;
+inline constexpr std::size_t cache_line_size = 32U;
+inline constexpr std::array<address_range, 2> dma_accessible_ranges = {{ { 0x24000000UL, 0x24050000UL }, { 0x30000000UL, 0x30008000UL } }};
+
+} // namespace board::memory
+
+namespace board::device {
+
+namespace bmi088 {
+inline constexpr bsp::spi::bus spi = bsp::spi::bus::spi2;
+inline constexpr bsp::gpio::output acc_cs = bsp::gpio::output::bmi088_acc_cs;
+inline constexpr bsp::gpio::output gyro_cs = bsp::gpio::output::bmi088_gyro_cs;
+inline constexpr bsp::gpio::input gyro_drdy = bsp::gpio::input::bmi088_gyro_drdy;
+inline constexpr bsp::pwm::channel heater = bsp::pwm::channel::tim3_ch4;
+} // namespace bmi088
+
+namespace led {
+inline constexpr bsp::spi::bus spi = bsp::spi::bus::spi6;
+} // namespace led
+} // namespace board::device
 
 namespace params::ahrs {
   inline constexpr float imu_offset_x = 0.0f;
@@ -205,6 +243,7 @@ inline constexpr std::uint32_t request_period_ticks = 1U;
 namespace params::remoter {
   inline constexpr std::uint32_t thread_priority = 2;
   inline constexpr std::uint32_t rx_timeout_ticks = 100;
+  inline constexpr std::uint32_t offline_timeout_ticks = 120;
   inline constexpr std::uint32_t ps2_offline_timeout_ticks = 600;
   inline constexpr std::uint32_t ps2_frame_timeout_ticks = 20;
   inline constexpr float ps2_deadzone = 0.08f;

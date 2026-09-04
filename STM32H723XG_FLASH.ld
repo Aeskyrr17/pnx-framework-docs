@@ -240,6 +240,17 @@ SECTIONS
     _eram_d1_bss = .;
   } >RAM_D1
 
+  .dma_buffer (NOLOAD) : ALIGN(32)
+  {
+    _sdma_buffer = .;
+    KEEP(*(.dma_buffer))
+    KEEP(*(.dma_buffer*))
+    . = ALIGN(32);
+    _edma_buffer = .;
+  } >RAM_D1
+  ASSERT((ADDR(.dma_buffer) % 32) == 0, ".dma_buffer start must be cache-line aligned")
+  ASSERT((SIZEOF(.dma_buffer) % 32) == 0, ".dma_buffer size must be cache-line aligned")
+
   .ram_d2_bss (NOLOAD) :
   {
     . = ALIGN(8);
