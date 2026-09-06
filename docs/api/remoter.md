@@ -1,11 +1,11 @@
 # Remoter
 
-`remoter` 把 DR16、VT03 或 PS2 的输入整理为统一的 `remoter::state`，让机器人应用把“遥控器按键怎么对应机器人动作”留在自己的映射函数中。
+`remoter` 把 DR16、VT03 或串口 PS2 接收器的输入整理为统一的 `remoter::state`，让机器人应用把“遥控器按键怎么对应机器人动作”留在自己的映射函数中。
 
 ## 注意
 
-- 在 `params.json` 中设置 `remoter.source` 为 `dr16`、`vt03` 或 `ps2`，然后重新执行 CMake configure。当前配置生成器一次只启用其中一种来源。
-- DR16 和 PS2 使用 `bindings.remoter_uart`；VT03 当前使用 `app::uart::vt03`
+- 在 `params.json` 中设置 `remoter.source` 为 `dr16`、`vt03` 或 `ps2_uart`，然后重新执行 CMake configure。当前配置生成器一次只启用其中一种来源。
+- DR16 和串口 PS2 接收器使用 `bindings.remoter_uart`；VT03 当前使用 `app::uart::vt03`
 
 ## 先定义机器人的 command
 
@@ -62,15 +62,15 @@ void map_vt03(const remoter::state& input) noexcept
     use_command(command);
 }
 
-void map_ps2(const remoter::state& input) noexcept
+void map_ps2_uart(const remoter::state& input) noexcept
 {
     robot_command command{};
-    if (!input.offline && input.active_source == remoter::source::ps2)
+    if (!input.offline && input.active_source == remoter::source::ps2_uart)
     {
         command.forward = input.right_y;
         command.turn = input.right_x;
-        command.shoot = remoter::is_held(input.ps2_buttons, remoter::ps2_button::r1);
-        command.relax = remoter::is_held(input.ps2_buttons, remoter::ps2_button::select);
+        command.shoot = remoter::is_held(input.ps2_uart_buttons, remoter::ps2_uart_button::r1);
+        command.relax = remoter::is_held(input.ps2_uart_buttons, remoter::ps2_uart_button::select);
     }
     use_command(command);
 }
@@ -85,9 +85,9 @@ remoter::update_callback configured_mapping() noexcept
     {
         return remoter::update_callback::bind<&map_vt03>();
     }
-    else if constexpr (::config::feature::enable_ps2)
+    else if constexpr (::config::feature::enable_ps2_uart)
     {
-        return remoter::update_callback::bind<&map_ps2>();
+        return remoter::update_callback::bind<&map_ps2_uart>();
     }
     return {};
 }
@@ -114,18 +114,18 @@ types::status init_remoter() noexcept
 | 成员 | 用处 |
 | --- | --- |
 | `offline` | 遥控器是否离线。离线时应输出安全 command。 |
-| `active_source` | 当前输入来源：`dr16`、`vt03`、`ps2` 或 `none`。 |
+| `active_source` | 当前输入来源：`dr16`、`vt03`、`ps2_uart` 或 `none`。 |
 | `right_x`、`right_y`、`left_x`、`left_y` | 已归一化的摇杆量。 |
 | `left_sw`、`right_sw` | DR16 的三档开关状态。 |
 | `mouse_left`、`mouse_right`、`key` | DR16 / VT03 的鼠标和键盘输入。 |
 | `button`、`pause` | VT03 的扳机和暂停输入。 |
-| `ps2_buttons` | PS2 当前按键位图；用 `is_held()` 判断单个按键。 |
+| `ps2_uart_buttons` | 串口 PS2 接收器当前按键位图；用 `is_held()` 判断单个按键。 |
 
 回调在 Remoter 的合并线程中运行，且在模块发布状态之后同步调用。传入的 `state` 引用只在本次调用中有效；不能在回调中等待、加锁或做耗时工作。若控制线程与回调不在同一线程，应把 command 通过应用自己的消息通道或同步方式交接。
 
 ## 常见错误
 
-- 在底盘、云台等控制代码里直接判断 `mouse_left`、`ps2_buttons` 等具体遥控器字段。这样换遥控器时会牵动所有控制逻辑。
+- 在底盘、云台等控制代码里直接判断 `mouse_left`、`ps2_uart_buttons` 等具体遥控器字段。这样换遥控器时会牵动所有控制逻辑。
 - 忘记先检查 `offline`，导致掉线后继续使用上一次输入。
 - 只改 `params.json`，没有重新执行 CMake configure；`enable_dr16` 等生成开关和 UART 绑定不会自动更新。
 - 第二次 `init()` 试图更换 `on_update_callback`。当前实现会保留第一次成功初始化时的回调。
