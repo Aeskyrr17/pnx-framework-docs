@@ -95,8 +95,12 @@ void capture_dmimu_message(const ::imu::state& data) noexcept
     debug.yaw = data.yaw;
     debug.pitch = data.pitch;
     debug.roll = data.roll;
-    std::memcpy(debug.gyro, data.gyro, sizeof(debug.gyro));
-    std::memcpy(debug.accel, data.accel, sizeof(debug.accel));
+    debug.gyro[0] = data.gyro_r;
+    debug.gyro[1] = data.gyro_p;
+    debug.gyro[2] = data.gyro_y;
+    debug.accel[0] = data.accel_x;
+    debug.accel[1] = data.accel_y;
+    debug.accel[2] = data.accel_z;
     dmimu_yaw_debug = data.yaw;
 }
 
