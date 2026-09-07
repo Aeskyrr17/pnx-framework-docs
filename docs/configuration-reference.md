@@ -48,7 +48,7 @@
 
 | 字段 | 生成结果 | 注意 |
 | --- | --- | --- |
-| `remoter_uart` | `app::uart::dr16`、`app::uart::vt03`、`app::uart::ps2` | DR16、VT03、PS2 使用它。 |
+| `remoter_uart` | `app::uart::dr16`、`app::uart::vt03`、`app::uart::ps2_uart` | DR16、VT03、串口 PS2 接收器使用它。 |
 | `referee_uart` | `app::uart::referee` | Referee 服务使用它。 |
 | `uart_ports.<角色>` | `app::uart::<角色>` | 自定义应用串口角色。角色必须是合法 C++ 名称，且不能与内置角色重名。 |
 | `spi_buses.<角色>` | `app::spi::<角色>` | 自定义 SPI 总线角色。 |
@@ -97,7 +97,7 @@
     "request_period_ticks": 1
   },
   "remoter": {
-    "source": "dr16", //TODO：
+    "source": "ps2",
     "thread_priority": 2,
     "rx_timeout_ticks": 100,
     "offline_timeout_ticks": 120,
@@ -110,7 +110,7 @@
 
 | 分组 | 关键字段 | 用处 |
 | --- | --- | --- |
-| `remoter` | `source`、线程优先级、超时、PS2 死区 | **`source` 只能是 `dr16`、`vt03` 或 `ps2`**|
+| `remoter` | `source`、线程优先级、超时、串口 PS2 死区 | **`source` 只能是 `dr16`、`vt03`、`ps2` 或 `ps2_uart`**；`ps2` 的引脚和 backend 在顶层 `ps2` 配置。|
 | `referee` | `thread_priority` | 生成线程优先级|
 | `ahrs` | `imu_offset_x`、两个线程优先级、`target_temp` | 生成 `params::ahrs`，作为 AHRS 默认配置。 |
 | `dmimu` | `communication_mode`、离线超时、线程优先级、接收等待、请求周期 | 生成 `params::dmimu`。模式只能是 `active` 或 `request`；超时与接收等待必须大于 0，`request` 模式的请求周期也必须大于 0。 |
