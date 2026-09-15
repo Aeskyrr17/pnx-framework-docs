@@ -1,6 +1,7 @@
 site_name: PnX Documentation
+site_url: https://aeskyrr17.github.io/pnx-framework-docs/
 site_dir: build/docs
-repo_url: https://github.com/HKUSTGZ-ROBOMASTER-PNX/pnx_template
+repo_url: https://github.com/Aeskyrr17/pnx-framework-docs
 edit_uri: edit/main/docs/
 
 theme:
