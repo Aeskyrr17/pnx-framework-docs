@@ -8,31 +8,27 @@
       
       
       
-        <link rel="canonical" href="https://aeskyrr17.github.io/pnx-framework-docs/api/bsp-exti/">
+        <link rel="canonical" href="https://aeskyrr17.github.io/pnx-framework-docs/cmake-architecture-review/">
       
       
-        <link rel="prev" href="../bsp-dwt/">
-      
-      
-        <link rel="next" href="../bsp-gpio/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>EXTI 外部中断 - PnX Documentation</title>
+        <title>启动架构与 CMake 维护性审查 - PnX Documentation</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -51,9 +47,9 @@
       
     
     
-      <link rel="stylesheet" href="../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#bspexti" class="md-skip">
+        <a href="#cmake" class="md-skip">
           Skip to content
         </a>
       
@@ -94,7 +90,7 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="PnX Documentation" class="md-header__button md-logo" aria-label="PnX Documentation" data-md-component="logo">
+    <a href=".." title="PnX Documentation" class="md-header__button md-logo" aria-label="PnX Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -114,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              EXTI 外部中断
+              启动架构与 CMake 维护性审查
             
           </span>
         </div>
@@ -221,7 +217,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../.." class="md-tabs__link">
+      <a href=".." class="md-tabs__link">
         
   
   
@@ -242,7 +238,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../project-structure/" class="md-tabs__link">
+        <a href="../project-structure/" class="md-tabs__link">
           
   
   
@@ -264,7 +260,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../concepts/h7-f4-unification/" class="md-tabs__link">
+        <a href="../concepts/h7-f4-unification/" class="md-tabs__link">
           
   
   
@@ -282,13 +278,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../api/" class="md-tabs__link">
           
   
   
@@ -310,7 +304,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../agent-context/" class="md-tabs__link">
+        <a href="../agent-context/" class="md-tabs__link">
           
   
   
@@ -352,7 +346,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="PnX Documentation" class="md-nav__button md-logo" aria-label="PnX Documentation" data-md-component="logo">
+    <a href=".." title="PnX Documentation" class="md-nav__button md-logo" aria-label="PnX Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -382,7 +376,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -471,7 +465,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../project-structure/" class="md-nav__link">
+      <a href="../project-structure/" class="md-nav__link">
         
   
   
@@ -499,7 +493,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration/" class="md-nav__link">
+      <a href="../configuration/" class="md-nav__link">
         
   
   
@@ -527,7 +521,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration-reference/" class="md-nav__link">
+      <a href="../configuration-reference/" class="md-nav__link">
         
   
   
@@ -555,7 +549,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../thread/" class="md-nav__link">
+      <a href="../thread/" class="md-nav__link">
         
   
   
@@ -583,7 +577,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../startup/" class="md-nav__link">
+      <a href="../startup/" class="md-nav__link">
         
   
   
@@ -674,7 +668,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/h7-f4-unification/" class="md-nav__link">
+      <a href="../concepts/h7-f4-unification/" class="md-nav__link">
         
   
   
@@ -702,7 +696,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/interrupt-callback/" class="md-nav__link">
+      <a href="../concepts/interrupt-callback/" class="md-nav__link">
         
   
   
@@ -734,8 +728,6 @@
       
   
   
-    
-  
   
   
     
@@ -757,21 +749,18 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../api/" class="md-nav__link ">
               
   
   
@@ -789,13 +778,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -812,10 +801,8 @@
                 
   
   
-    
   
   
-  
     
     
       
@@ -846,11 +833,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
         
           
           <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
@@ -871,7 +858,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -889,7 +876,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bsp-can/" class="md-nav__link">
+      <a href="../api/bsp-can/" class="md-nav__link">
         
   
   
@@ -917,7 +904,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bsp-adc/" class="md-nav__link">
+      <a href="../api/bsp-adc/" class="md-nav__link">
         
   
   
@@ -945,7 +932,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bsp-dma/" class="md-nav__link">
+      <a href="../api/bsp-dma/" class="md-nav__link">
         
   
   
@@ -973,7 +960,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bsp-dwt/" class="md-nav__link">
+      <a href="../api/bsp-dwt/" class="md-nav__link">
         
   
   
@@ -998,37 +985,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    EXTI 外部中断
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../api/bsp-exti/" class="md-nav__link">
         
   
   
@@ -1044,103 +1004,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        注意
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#header-namespace" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Header / Namespace
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        初始化
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        核心类型
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        常用接口
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        常见错误
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        相关内容
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1153,7 +1016,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bsp-gpio/" class="md-nav__link">
+      <a href="../api/bsp-gpio/" class="md-nav__link">
         
   
   
@@ -1181,7 +1044,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bsp-pwm/" class="md-nav__link">
+      <a href="../api/bsp-pwm/" class="md-nav__link">
         
   
   
@@ -1209,7 +1072,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bsp-spi/" class="md-nav__link">
+      <a href="../api/bsp-spi/" class="md-nav__link">
         
   
   
@@ -1237,7 +1100,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bsp-usart/" class="md-nav__link">
+      <a href="../api/bsp-usart/" class="md-nav__link">
         
   
   
@@ -1265,7 +1128,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bsp-usb/" class="md-nav__link">
+      <a href="../api/bsp-usb/" class="md-nav__link">
         
   
   
@@ -1359,7 +1222,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ahrs/" class="md-nav__link">
+      <a href="../api/ahrs/" class="md-nav__link">
         
   
   
@@ -1387,7 +1250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../referee/" class="md-nav__link">
+      <a href="../api/referee/" class="md-nav__link">
         
   
   
@@ -1471,7 +1334,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../remoter/" class="md-nav__link">
+      <a href="../api/remoter/" class="md-nav__link">
         
   
   
@@ -1499,7 +1362,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ps2/" class="md-nav__link">
+      <a href="../api/ps2/" class="md-nav__link">
         
   
   
@@ -1597,7 +1460,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../motors/" class="md-nav__link">
+      <a href="../api/motors/" class="md-nav__link">
         
   
   
@@ -1687,7 +1550,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../libs/" class="md-nav__link">
+      <a href="../api/libs/" class="md-nav__link">
         
   
   
@@ -1784,7 +1647,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../agent-context/" class="md-nav__link">
+      <a href="../agent-context/" class="md-nav__link">
         
   
   
@@ -1842,18 +1705,7 @@
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        注意
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#header-namespace" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Header / Namespace
+        本次整理结果
       
     </span>
   </a>
@@ -1864,7 +1716,7 @@
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        初始化
+        结论
       
     </span>
   </a>
@@ -1875,7 +1727,29 @@
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        核心类型
+        本次完成的启动边界
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cmake_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CMake 实际做什么
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate_configcmake" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate_config.cmake 内部职责
       
     </span>
   </a>
@@ -1886,7 +1760,7 @@
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        常用接口
+        维护风险与优先级
       
     </span>
   </a>
@@ -1897,7 +1771,7 @@
   <a href="#_5" class="md-nav__link">
     <span class="md-ellipsis">
       
-        常见错误
+        配置默认值与构建矩阵（已落实）
       
     </span>
   </a>
@@ -1908,7 +1782,18 @@
   <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       
-        相关内容
+        后续维护方向
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        本次验证范围
       
     </span>
   </a>
@@ -1933,64 +1818,6 @@
   
 
 
-  <nav class="md-path" aria-label="Navigation" >
-    <ol class="md-path__list">
-      
-        
-  
-  
-    <li class="md-path__item">
-      <a href="../.." class="md-path__link">
-        
-  <span class="md-ellipsis">
-    首页
-  </span>
-
-      </a>
-    </li>
-  
-
-      
-      
-        
-  
-  
-    
-    
-      <li class="md-path__item">
-        <a href="../" class="md-path__link">
-          
-  <span class="md-ellipsis">
-    API Reference
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-    
-    
-      <li class="md-path__item">
-        <a href="../bsp-can/" class="md-path__link">
-          
-  <span class="md-ellipsis">
-    BSP
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-      
-    </ol>
-  </nav>
-
               
               <article class="md-content__inner md-typeset">
                 
@@ -1998,7 +1825,7 @@
 
 
   
-    <a href="https://github.com/Aeskyrr17/pnx-framework-docs/edit/main/docs/api/bsp-exti.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/Aeskyrr17/pnx-framework-docs/edit/main/docs/cmake-architecture-review.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -2006,83 +1833,203 @@
   
 
 
-<h1 id="bspexti">bsp::exti</h1>
-<p><code>bsp::exti</code> 为已配置为外部中断的 GPIO 输入注册回调。</p>
-<h2 id="_1">注意</h2>
-<p>回调在 GPIO HAL 中断路径执行，只能快速记录状态或通知后续线程，不能阻塞。</p>
-<h2 id="header-namespace">Header / Namespace</h2>
+<h1 id="cmake">启动架构与 CMake 维护性审查</h1>
+<h2 id="_1">本次整理结果</h2>
+<p>保持原有文件布局，没有新增 CMake 文件、模板目录或框架层。</p>
 <ul>
-<li>Header：<code>bsp_exti.hpp</code></li>
-<li>Namespace：<code>bsp::exti</code></li>
+<li>generate_config.cmake：辅助函数集中在文件开头；统一浮点、整数、布尔参数输出，合并重复默认值块；用一个本地输出函数替代写文件、读回、替换占位符、再次写文件的流程。内容未变化时保留输出时间戳。</li>
+<li>根 CMakeLists.txt：电机与遥控器的重复路径筛选改成直接循环；补齐 app 头文件路径收集；OpenOCD 配置与源文件清单改为内容变化时更新。</li>
+<li>import_ioc.cmake：增加重复包含保护，明确只输出硬件事实，不承担应用配置语义。</li>
+<li>export_editor_context.cmake：PWM 与其他资源共用数组导出循环；本地辅助函数使用明确前缀；相同快照不重写，失败时仍保留旧文件。</li>
+<li>usbx_integration.cmake：明确输入与目标修改范围；禁用 USBX 的启动钩子也按内容变化更新。</li>
+<li>cmake/gcc-arm-none-eabi.cmake：继续保持薄板型选择入口，不搬入板级编译参数。</li>
 </ul>
-<h2 id="_2">初始化</h2>
-<p>没有单独的 <code>init()</code>。在启动阶段为输入调用 <code>attach()</code>。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">// 使用片段：为配置的传感器就绪输入注册中断</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">"bsp_exti.hpp"</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">namespace</span><span class="w"> </span><span class="nn">robot</span><span class="o">::</span><span class="nn">application</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">{</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="k">namespace</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">{</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="k">volatile</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">sensor_data_ready</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="kt">void</span><span class="w"> </span><span class="nf">on_sensor_data_ready</span><span class="p">()</span><span class="w"> </span><span class="k">noexcept</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">{</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="n">sensor_data_ready</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">}</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">types</span><span class="o">::</span><span class="n">status</span><span class="w"> </span><span class="nf">init_sensor_interrupt</span><span class="p">()</span><span class="w"> </span><span class="k">noexcept</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="p">{</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">bsp</span><span class="o">::</span><span class="n">exti</span><span class="o">::</span><span class="n">attach</span><span class="p">(</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">        </span><span class="n">app</span><span class="o">::</span><span class="n">gpio</span><span class="o">::</span><span class="n">sensor_ready</span><span class="p">,</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">        </span><span class="n">bsp</span><span class="o">::</span><span class="n">exti</span><span class="o">::</span><span class="n">interrupt_callback</span><span class="o">::</span><span class="n">bind</span><span class="o">&lt;&amp;</span><span class="n">on_sensor_data_ready</span><span class="o">&gt;</span><span class="p">());</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="p">}</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="p">}</span><span class="w"> </span><span class="c1">// namespace</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="p">}</span><span class="w"> </span><span class="c1">// namespace robot::application</span>
+<p>前一轮结构整理验证：H7/F4 的四个生成 C++ 文件逐字节一致，两板 Debug 构建及 13 项回归通过。本轮默认数据与构建矩阵的后续验证见下文；源码选择和 CubeMX 适配仍可继续整理。</p>
+<h2 id="_2">结论</h2>
+<p>当前两板构建机制能够继续使用，无需重写为另一套构建框架。父 CMake 的职责基本合理；主要维护压力集中在较长的 generate_config.cmake，以及生成器和 GUI 校验之间需要同步的规则。</p>
+<p>建议先统一配置语义与默认值，再按职责小范围拆分生成器。不要为了减少文件行数引入注册中心、运行时 MCU 选择或大量细碎 CMake 文件。</p>
+<h2 id="_3">本次完成的启动边界</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>CubeMX main.c
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  ├─ HAL、时钟、外设初始化
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  └─ Core/Src/app_threadx.c: MX_ThreadX_Init
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>       └─ tx_kernel_enter
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>            └─ tx_application_define（CubeMX Azure RTOS 文件）
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>                 └─ Core/Src/app_threadx.c: App_ThreadX_Init
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                      └─ app/app.cpp: app_start
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                           └─ 按 test.auto_run_on_boot 调用 diagnose_start
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                                └─ diagnose/app.cpp: 选择具体测试
 </code></pre></div>
-<h2 id="_3">核心类型</h2>
+<ul>
+<li>H7/F4 均恢复编译自己的 Core/Src/app_threadx.c。</li>
+<li>Core 只通过 USER CODE 区声明和调用 app_start；H7 原本已有调用，F4 补齐相同接口。</li>
+<li>app/app.cpp 不再包含 ThreadX 头文件或实现 ThreadX 入口，仅负责应用启动。</li>
+<li>diagnose/app.cpp 负责诊断组成，不拥有应用或内核入口。</li>
+<li>main、外设初始化、tx_application_define 及其现有栈检查逻辑保持不变。</li>
+<li>App_ThreadX_Init 在内核初始化阶段执行，此处适合创建线程、初始化应用资源；不应直接运行永久业务循环。</li>
+<li>app_start 当前仍只有诊断入口。以后增加业务启动函数，明确选择业务或诊断，避免重复初始化同一模块。</li>
+</ul>
+<h2 id="cmake_1">CMake 实际做什么</h2>
+<p>这里有两个不同的“生成器”：Ninja 是 CMake 的构建系统生成器；generate_config.cmake 是本工程把 JSON/IOC 转为 C++ 的配置脚本。它们不是同一个东西。</p>
 <table>
 <thead>
 <tr>
-<th>类型</th>
-<th>用途</th>
+<th>环节</th>
+<th>输入</th>
+<th>职责与输出</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>interrupt_callback</code></td>
-<td>无参数回调；在 GPIO HAL 中断路径中执行。</td>
+<td>CMakePresets.json</td>
+<td>用户选中的 preset</td>
+<td>设置 PNX_BOARD、Debug/Release、构建目录和工具链入口</td>
+</tr>
+<tr>
+<td>boards/<board>/board.cmake</td>
+<td>PNX_BOARD</td>
+<td>指定 IOC、CubeMX CMake、链接脚本、参数路径、MCU 家族、OpenOCD target</td>
+</tr>
+<tr>
+<td>cmake/gcc-arm-none-eabi.cmake 与板级 toolchain.cmake</td>
+<td>PNX_BOARD</td>
+<td>选择编译器、CPU/FPU/ABI、链接脚本等编译链接参数</td>
+</tr>
+<tr>
+<td>根 CMakeLists.txt</td>
+<td>板型与 BSP manifest</td>
+<td>验证板型和 BSP 家族匹配；执行配置生成；组装可执行目标</td>
+</tr>
+<tr>
+<td>import_ioc.cmake</td>
+<td>CubeMX IOC</td>
+<td>提取已经配置的 UART/CAN/SPI/PWM/ADC/GPIO、DMA、IRQ 等事实；不配置芯片、不替代 CubeMX</td>
+</tr>
+<tr>
+<td>generate_config.cmake</td>
+<td>IOC、board.json、params.json、robot.json</td>
+<td>检查绑定、计算 feature、生成枚举/常量/私有 HAL 绑定和电机配置</td>
+</tr>
+<tr>
+<td>CubeMX cmake/stm32cubemx</td>
+<td>所选板生成源码</td>
+<td>添加 HAL、启动汇编、ThreadX、USBX 等目标与源码</td>
+</tr>
+<tr>
+<td>usbx_integration.cmake</td>
+<td>build.usbx 与 CubeMX 目标</td>
+<td>替换两个 USB 应用模板；关闭 USBX 时裁剪库和描述符，并生成关闭状态的启动钩子</td>
+</tr>
+<tr>
+<td>根 CMake 源文件筛选</td>
+<td>feature 与设备配置</td>
+<td>从收集到的源码中排除未选择驱动/测试；限定 BSP 私有头文件可见范围</td>
+</tr>
+<tr>
+<td>CMake → Ninja</td>
+<td>最终目标依赖图</td>
+<td>产生编译、链接规则；实际编译由 ARM GCC 执行</td>
+</tr>
+<tr>
+<td>export_editor_context.cmake</td>
+<td>板型、IOC、board.json</td>
+<td>给 GUI 导出只读资源，不读取应用参数，也不是固件的配置输入</td>
 </tr>
 </tbody>
 </table>
-<h2 id="_4">常用接口</h2>
+<p>Configure 阶段产生 build/<preset>/generated 下的 config.hpp、bsp_bindings.hpp/.cpp、robot_config.hpp；USBX 关闭时另有 usbx_disabled.c。构建目录还保存源文件清单、compile_commands.json 和 pnx-openocd.cfg。Build 阶段按这些规则编译并链接 ELF。它不会自动烧录，也不会自动运行诊断。</p>
+<h2 id="generate_configcmake">generate_config.cmake 内部职责</h2>
+<ol>
+<li>读取 board 内存策略、固定设备接线和 IOC 外设事实。</li>
+<li>根据 robot 选择 BMI088、LED、DMIMU 和电机驱动，根据 params 选择遥控器、USBX 和诊断。</li>
+<li>将 UART/CAN/SPI/GPIO/PWM/ADC 角色解析为真实、已配置资源，检查必要的方向、DMA 等条件。</li>
+<li>生成公共类型与逻辑名称，让共享代码通过 app::、board::device::、params:: 访问配置。</li>
+<li>在私有生成源中声明 HAL 句柄、生成句柄查找和绑定，避免共享模块依赖 MCU HAL。</li>
+<li>生成电机型号、控制模式、ID 等机器人组成信息。</li>
+<li>同时把 feature、资源数量等变量留在调用方 CMake 作用域中，用于裁剪源码。</li>
+</ol>
+<p>它不负责 HAL 外设初始化、不执行 IMU 温控或姿态算法、不运行 test。test 仅影响生成结果与启动选择。</p>
+<h2 id="_4">维护风险与优先级</h2>
 <table>
 <thead>
 <tr>
-<th>接口</th>
-<th>用途与注意事项</th>
+<th>优先级</th>
+<th>当前问题</th>
+<th>后果</th>
+<th>建议</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>attach(input, callback)</code></td>
-<td>绑定一个输入和回调；同一引脚再次绑定会替换旧回调。</td>
+<td>已处理</td>
+<td>默认值多处维护</td>
+<td>已集中到 configs/defaults.json；板型 params 为用户覆盖</td>
+<td>修改默认数据后重新打包编辑器</td>
+</tr>
+<tr>
+<td>高</td>
+<td>generate_config.cmake 同时计算规则、维护状态、拼接 C++ 字符串</td>
+<td>一个新增参数可能需要修改多个远隔段落，作用域和顺序依赖不直观</td>
+<td>先列清输入/输出变量；再分成参数解析与 feature、硬件绑定、代码输出三个主要职责，仍由一个入口调用</td>
+</tr>
+<tr>
+<td>已处理</td>
+<td>构建矩阵缺少可运行脚本</td>
+<td>已补 tests/v2-validation/validate.py，并实际运行两板 Debug 矩阵</td>
+<td>后续改动复用该脚本</td>
+</tr>
+<tr>
+<td>中</td>
+<td>GLOB_RECURSE 收集全部源码，再靠路径正则排除</td>
+<td>新目录/新驱动可能被意外编译；改路径可能破坏裁剪</td>
+<td>优先把 app/diagnose 选择改为明确源码列表，再处理驱动；不必一次为每个目录建库</td>
+</tr>
+<tr>
+<td>中</td>
+<td>根据所有头文件目录推导 include 路径</td>
+<td>部分未选模块头仍可见；BSP 私有目录识别依赖 /src 结尾</td>
+<td>保留现有 public/private 边界，逐步显式列出公开 include，验证私有路径不外泄</td>
+</tr>
+<tr>
+<td>中</td>
+<td>根 CMake 读取并修改 CubeMX target 的 SOURCES/LINK_LIBRARIES</td>
+<td>CubeMX 改变目标结构后 USB 模板替换可能失效</td>
+<td>将修改集中在已有 usbx_integration.cmake；每次再生成检查 USBX 开关两种构建</td>
+</tr>
+<tr>
+<td>中</td>
+<td>GUI 与生成器分别实现 test 依赖提示/校验</td>
+<td>用户可能见到 GUI 通过、Configure 失败</td>
+<td>用同一组合法/非法配置样例测试两者；无需现在建立通用规则引擎</td>
+</tr>
+<tr>
+<td>中</td>
+<td>PS2 的 GPIO/SPI 绑定展开混在设备与板级解析之间</td>
+<td>模块参数边界与其他模块不一致</td>
+<td>后续单独决定外接设备 binding 形式；不在本次启动迁移中扩大范围</td>
+</tr>
+<tr>
+<td>低</td>
+<td>构建清单由 file(WRITE) 重写</td>
+<td>可能触发不必要的依赖重建</td>
+<td>输出内容不变时避免改时间戳，或使用 configure_file 模板</td>
 </tr>
 </tbody>
 </table>
-<h2 id="_5">常见错误</h2>
-<ul>
-<li>在回调中等待信号量、打印日志或进行耗时计算：它处于中断路径，必须快速返回。</li>
-<li>把短生命周期对象的成员函数注册为回调：回调不拥有目标对象。</li>
-<li>在 IOC 中没有把该引脚配置为 EXTI：注册并不会替你开启硬件中断。</li>
-</ul>
-<h2 id="_6">相关内容</h2>
-<ul>
-<li><a href="../../concepts/interrupt-callback/">通用回调</a></li>
-<li><a href="../bsp-gpio/">GPIO</a></li>
-</ul>
+<h2 id="_5">配置默认值与构建矩阵（已落实）</h2>
+<p><code>configs/defaults.json</code> 是默认参数的唯一维护入口，包含公共值、两板覆盖值和串口推荐值。CMake 直接读取；编辑器编译时从同一文件生成打包快照，Schema 只保留结构、类型和范围。修改默认数据后需重新打包编辑器。</p>
+<p>合并顺序为公共默认值、板型默认值、用户 params，按字段递归覆盖；数组整体替换。缺少一个字段不会丢失同模块的其他默认常量。公共缺省关闭 USBX、板载消费者、遥控器和测试；板型 profile 可以显式覆盖，例如当前 F407 profile 启用 BMI088、USBX 和 USB 诊断。串口推荐值不等于已启用的绑定。</p>
+<p>未启用的 BMI088/AHRS、DMIMU、USB、遥控器、裁判系统和 CAN 诊断使用内部默认常量，忽略遗留调参值；不改写用户 JSON。PS2 仅在选用时解析。已声明的硬件 binding 仍需指向真实资源。UART/CAN 测试仅在开启时要求 test_uart/test_can，USB 和 IMU 测试要求对应消费者开启。</p>
+<p>复现命令：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">python</span> <span class="n">tests</span><span class="p">/</span><span class="n">v2-validation</span><span class="p">/</span><span class="n">validate</span><span class="p">.</span><span class="n">py</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">python</span> <span class="n">tests</span><span class="p">/</span><span class="n">v2-validation</span><span class="p">/</span><span class="n">validate</span><span class="p">.</span><span class="n">py</span> <span class="p">-</span><span class="n">-configure-only</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">python</span> <span class="n">tests</span><span class="p">/</span><span class="n">v2-validation</span><span class="p">/</span><span class="n">validate</span><span class="p">.</span><span class="n">py</span> <span class="p">-</span><span class="n">-build-type</span> <span class="n">Release</span>
+</code></pre></div>
+<p>两板默认均使用 pnx_bsp，运行前需切换到匹配板型的 BSP 分支，并通过 --board 选择该板。并行保留两套源码时，可以显式传入 --h7-bsp / --f4-bsp；脚本不再默认指定本地 worktree。依赖 CMake、Ninja 和 ARM GCC 在 PATH 中。每板覆盖 minimal、uart、can、usb_on、usb_off、bmi_off、quaternion、tactical 八种配置，另有四项缺少依赖的预期失败检查。临时 params/robot、日志、ELF 和 results.json 位于 build/v2-validation 下，不修改正在使用的板型配置；复用板型构建目录以避免重复编译整个 HAL。</p>
+<p>本次两板共 16 个 Debug 完整镜像构建通过，8 项依赖缺失检查通过，编辑器 14 项测试通过。验证还检查了部分 AHRS 参数覆盖、F4/H7 温控默认差异及三个启动入口各只有一个定义。未进行硬件测试。以上落实并取代本文旧审查中“默认值未统一”和“矩阵脚本不存在”的状态。</p>
+<h2 id="_6">后续维护方向</h2>
+<p>继续收敛根 CMake 的源码选择，并按完整职责整理生成器。无需把生成器拆成大量小文件；优先减少重复规则、隐含作用域和跨文件同步修改。涉及公共 BSP 或生成规则的改动必须复用双板矩阵，并把构建结果与硬件验证分开记录。</p>
+<h2 id="_7">本次验证范围</h2>
+<p>H7 Debug 与 F4 Debug 均完成编译链接。新增的 Core 调用在 USER CODE 区，未修改 main 或 HAL 生成初始化段。已检查两个 ThreadX 入口的定义位置；未启动调试、烧录或验证实际调度。当前结果不替代 USB 枚举、IMU 数据等硬件测试。</p>
 
 
 
@@ -2138,10 +2085,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.path", "navigation.top", "navigation.indexes", "content.action.edit", "toc.follow", "content.code.copy", "content.code.annotate", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.path", "navigation.top", "navigation.indexes", "content.action.edit", "toc.follow", "content.code.copy", "content.code.annotate", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

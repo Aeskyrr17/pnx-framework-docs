@@ -8,6 +8,8 @@
       
       
       
+        <link rel="canonical" href="https://aeskyrr17.github.io/pnx-framework-docs/">
+      
       
       
         <link rel="next" href="project-structure/">
@@ -192,7 +194,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/HKUSTGZ-ROBOMASTER-PNX/pnx_template" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/Aeskyrr17/pnx-framework-docs" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -262,7 +264,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="concepts/interrupt-callback/" class="md-tabs__link">
+        <a href="concepts/h7-f4-unification/" class="md-tabs__link">
           
   
   
@@ -358,7 +360,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/HKUSTGZ-ROBOMASTER-PNX/pnx_template" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/Aeskyrr17/pnx-framework-docs" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -441,7 +443,7 @@
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        建议阅读顺序
+        当前架构与构建入口
       
     </span>
   </a>
@@ -450,6 +452,17 @@
       
         <li class="md-nav__item">
   <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        建议阅读顺序
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         按功能查找
@@ -709,6 +722,8 @@
       
         
       
+        
+      
     
     
     
@@ -751,6 +766,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="concepts/h7-f4-unification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    H7/F4 统一架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -868,8 +911,6 @@
   
     
     
-      
-        
       
         
       
@@ -1061,34 +1102,6 @@
     
   
     EXTI 外部中断
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="api/bsp-flash/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Flash
   
 
     
@@ -1798,7 +1811,7 @@
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        建议阅读顺序
+        当前架构与构建入口
       
     </span>
   </a>
@@ -1807,6 +1820,17 @@
       
         <li class="md-nav__item">
   <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        建议阅读顺序
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         按功能查找
@@ -1863,7 +1887,7 @@
 
 
   
-    <a href="https://github.com/HKUSTGZ-ROBOMASTER-PNX/pnx_template/edit/main/docs/index.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/Aeskyrr17/pnx-framework-docs/edit/main/docs/index.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1873,16 +1897,35 @@
 
 <h1 id="pnx_template">PnX_template</h1>
 <p>PnX_template 是一个基于 STM32 和 ThreadX 的嵌入式下位机模板，整合了板级外设、常用设备和可复用的基础库。</p>
-<p>文档最后更新：2026-09-04</p>
-<h2 id="_1">建议阅读顺序</h2>
+<p>文档最后更新：2026-09-13</p>
+<h2 id="_1">当前架构与构建入口</h2>
+<p>H723 与 F407 共用同一套 Template、Lib、Device 和 Module，但使用不同的 BSP 分支，并在构建时通过不同 CMake preset 选择板型。<code>PNX_BOARD</code> 只选择 <code>boards/&lt;board&gt;/</code>，<strong>不会自动切换 <code>pnx_bsp</code> 的 Git 分支</strong>；分支与板型不匹配时 CMake 会拒绝配置。</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">H723 Debug</label><label for="__tabbed_1_2">F407 Debug</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">git</span> <span class="n">-C</span> <span class="n">pnx_bsp</span> <span class="k">switch</span> <span class="n">stm32h7</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">cmake</span> <span class="p">-</span><span class="n">-preset</span> <span class="n">h723-debug</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">git</span> <span class="n">-C</span> <span class="n">pnx_bsp</span> <span class="k">switch</span> <span class="n">stm32f4</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">cmake</span> <span class="p">-</span><span class="n">-preset</span> <span class="n">f407-debug</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>切换 BSP 前先妥善处理该子模块中的本地修改；两个 preset 使用独立构建目录。需要同时保留两套 BSP 时，可用 <code>PNX_BSP_SOURCE_DIR</code> 指向匹配分支的另一工作树。</p>
+<p>架构边界、公共接口要求和 CAN/DMA 等差异见 <a href="concepts/h7-f4-unification/">H7/F4 统一架构</a>。</p>
+<h2 id="_2">建议阅读顺序</h2>
 <ol>
 <li><a href="project-structure/">项目结构</a>：架构思想与结构</li>
-<li><a href="configuration/">配置</a>：config是什么，怎么用</li>
+<li><a href="concepts/h7-f4-unification/">H7/F4 统一架构</a>：两板如何共享上层以及必须保留的差异</li>
+<li><a href="configuration/">配置</a>：config 是什么，怎么用</li>
 <li><a href="startup/">启动流程</a>：程序的启动顺序，应用代码应该从哪里开始运行</li>
 <li><a href="thread/">创建应用线程</a>：从 <code>app_start()</code> 创建自己的控制线程</li>
 <li><a href="api/">API Reference</a>：按需要选择模块，参考真实接口</li>
 </ol>
-<h2 id="_2">按功能查找</h2>
+<h2 id="_3">按功能查找</h2>
 <ul>
 <li><a href="api/">使用 Motor</a>：电机的注册、控制和状态读取</li>
 <li><a href="api/">使用 IMU 或 AHRS</a>：姿态数据的获取和 AHRS Service</li>
@@ -1894,6 +1937,7 @@
 </ul>
 <h2 id="concepts">Concepts</h2>
 <ul>
+<li><a href="concepts/h7-f4-unification/">H7/F4 统一架构</a>：公共 BSP 契约、开发要求，以及 DMA、CAN、EXTI、PWM 和 USB 差异</li>
 <li><a href="concepts/interrupt-callback/">通用回调</a>：了解为什么要用回调，模块怎样把事件交给上层，以及回调中的代码约束</li>
 </ul>
 <h2 id="agent">给 Agent 的资料</h2>

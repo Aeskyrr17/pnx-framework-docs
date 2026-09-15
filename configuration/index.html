@@ -8,6 +8,8 @@
       
       
       
+        <link rel="canonical" href="https://aeskyrr17.github.io/pnx-framework-docs/configuration/">
+      
       
         <link rel="prev" href="../project-structure/">
       
@@ -194,7 +196,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/HKUSTGZ-ROBOMASTER-PNX/pnx_template" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/Aeskyrr17/pnx-framework-docs" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -264,7 +266,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../concepts/interrupt-callback/" class="md-tabs__link">
+        <a href="../concepts/h7-f4-unification/" class="md-tabs__link">
           
   
   
@@ -360,7 +362,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/HKUSTGZ-ROBOMASTER-PNX/pnx_template" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/Aeskyrr17/pnx-framework-docs" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -562,10 +564,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#boardboardioc" class="md-nav__link">
+  <a href="#v2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        board/board.ioc：工程文件
+        板级事实与机器人选择（V2）
       
     </span>
   </a>
@@ -573,10 +575,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#boardsh723_v1" class="md-nav__link">
+  <a href="#boardsboardboardioc" class="md-nav__link">
     <span class="md-ellipsis">
       
-        boards/h723_v1/
+        boards/&lt;board&gt;/&lt;board&gt;.ioc：工程文件
       
     </span>
   </a>
@@ -584,10 +586,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configsparamsjson" class="md-nav__link">
+  <a href="#boardsboard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        configs/params.json：绑定外设与构建选择
+        boards/&lt;board&gt;/
       
     </span>
   </a>
@@ -595,10 +597,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configsrobotjson" class="md-nav__link">
+  <a href="#configsboardsboardparamsjson" class="md-nav__link">
     <span class="md-ellipsis">
       
-        configs/robot.json：机器人设备
+        configs/boards/&lt;board&gt;/params.json：绑定外设与构建选择
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configsboardsboardrobotjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        configs/boards/&lt;board&gt;/robot.json：机器人设备
       
     </span>
   </a>
@@ -716,6 +729,8 @@
       
         
       
+        
+      
     
     
     
@@ -758,6 +773,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/h7-f4-unification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    H7/F4 统一架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -875,8 +918,6 @@
   
     
     
-      
-        
       
         
       
@@ -1068,34 +1109,6 @@
     
   
     EXTI 外部中断
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../api/bsp-flash/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Flash
   
 
     
@@ -1802,10 +1815,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#boardboardioc" class="md-nav__link">
+  <a href="#v2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        board/board.ioc：工程文件
+        板级事实与机器人选择（V2）
       
     </span>
   </a>
@@ -1813,10 +1826,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#boardsh723_v1" class="md-nav__link">
+  <a href="#boardsboardboardioc" class="md-nav__link">
     <span class="md-ellipsis">
       
-        boards/h723_v1/
+        boards/&lt;board&gt;/&lt;board&gt;.ioc：工程文件
       
     </span>
   </a>
@@ -1824,10 +1837,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configsparamsjson" class="md-nav__link">
+  <a href="#boardsboard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        configs/params.json：绑定外设与构建选择
+        boards/&lt;board&gt;/
       
     </span>
   </a>
@@ -1835,10 +1848,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configsrobotjson" class="md-nav__link">
+  <a href="#configsboardsboardparamsjson" class="md-nav__link">
     <span class="md-ellipsis">
       
-        configs/robot.json：机器人设备
+        configs/boards/&lt;board&gt;/params.json：绑定外设与构建选择
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configsboardsboardrobotjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        configs/boards/&lt;board&gt;/robot.json：机器人设备
       
     </span>
   </a>
@@ -1910,7 +1934,7 @@
 
 
   
-    <a href="https://github.com/HKUSTGZ-ROBOMASTER-PNX/pnx_template/edit/main/docs/configuration.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/Aeskyrr17/pnx-framework-docs/edit/main/docs/configuration.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1919,52 +1943,68 @@
 
 
 <h1 id="configuration">Configuration</h1>
+<h2 id="v2">板级事实与机器人选择（V2）</h2>
+<p><code>boards/&lt;board&gt;/board.json</code> 只描述开发板固定接线、板载器件绑定和静态内存事实。同一块 PCB 更换机器人时不应修改它。IOC 仍拥有引脚复用、外设实例、时钟、DMA 和中断配置。</p>
+<p>板载 BMI088、SPI LED 的 <code>board.json.devices</code> 条目只保留固定绑定，不再有 <code>enabled</code>。本机器人是否使用它们在 <code>configs/boards/&lt;board&gt;/robot.json</code> 中选择：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"devices"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">"bmi088"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">"led"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">}</span>
+</code></pre></div>
+<p>省略或设为 <code>false</code> 表示不启用对应消费者；固定板级绑定仍保留。启用没有板级绑定的器件会在生成阶段报错。当前 H723 与 F407 profile 都描述并启用了各自的 BMI088 固定绑定，但 SPI、片选、DRDY、加热 PWM 和调参分别来自各自板型，不能跨板复制。</p>
+<p><code>params.json</code> 保存运行参数、应用使用哪个外接接口及诊断选择；<code>robot.json</code> 保存设备组成和协议地址。外接设备换接口属于应用接线选择，不应反写板载固定接线。<code>configs/boards/&lt;board&gt;/</code> 是板型对应的默认应用配置位置，不表示其中内容是 PCB 固有属性。</p>
+<p><code>test.motor_demo</code> 默认关闭，仅启用现有 <code>motor1/motor2/motor3</code> 专用诊断例程。启用前必须同时配置这三个名称；它不控制电机驱动是否编译，也不替代应用创建设备和注册服务。任意电机名称和数量应由自己的应用使用生成的 <code>robot::motors</code> 配置。</p>
+<p>切板使用不同构建目录和对应 BSP 分支：H7 为 <code>stm32h7</code>，F4 为 <code>stm32f4</code>。父工程与其他子模块使用 <code>main</code>。<code>PNX_BOARD</code> 不会自动 checkout 子仓库。开发时可用 <code>PNX_BSP_SOURCE_DIR</code> 指向另一工作树；MCU 家族不匹配会在配置时失败。</p>
 <p>pnx_template中已经写好了大部分常用的 .json 配置，
 <strong>更具体的功能见<a href="../configuration-reference/">配置参考</a>。</strong></p>
 <p>配置顺序：
 1. STM32CubeMX
-2. boards/ 选择开发板 #TODO: 目前只支持喵板
-3. config/ 硬件配置与设备树
-- 不要修改生成的<code>generated.hpp</code></p>
-<h2 id="boardboardioc"><code>board/board.ioc</code>：工程文件</h2>
+2. 通过 <code>PNX_BOARD</code> 或对应 CMake preset 选择 <code>boards/&lt;board&gt;/</code>
+3. 修改 <code>configs/boards/&lt;board&gt;/</code> 中的应用配置与设备树
+- 不要修改 <code>build/&lt;preset&gt;/generated/</code> 中的生成文件</p>
+<h2 id="boardsboardboardioc"><code>boards/&lt;board&gt;/&lt;board&gt;.ioc</code>：工程文件</h2>
 <p>使用 STM32CubeMX 修改</p>
-<h2 id="boardsh723_v1"><code>boards/h723_v1/</code></h2>
-<p>当前选中的profile会通过 <code>boards/h723_v1/board.json</code> 为工程配置开发板的<strong>固定配置</strong>，<strong>大部分情况下不会修改</strong>：
-例如 BMI088 使用的 SPI、CS 与 DRDY 引脚。
+<h2 id="boardsboard"><code>boards/&lt;board&gt;/</code></h2>
+<p>当前选中的 profile 会通过 <code>boards/&lt;board&gt;/board.json</code> 为工程配置开发板的<strong>固定配置</strong>，<strong>大部分情况下不会修改</strong>：
+例如 BMI088 使用的 SPI、CS 与 DRDY 引脚，以及需要超时归零保护的 PWM 角色与
+其独立 failsafe timer。PWM 和 failsafe timer 的周期、模式及 DMA 配置仍由 IOC 管理。
 这些配置对于同一块开发板（mc02或C板）通用，特殊情况下可以配合<code>.ioc</code>进行修改：例如需要的引脚被占用，需修改常用配置才能满足开发需求。</p>
-<h2 id="configsparamsjson"><code>configs/params.json</code>：绑定外设与构建选择</h2>
+<h2 id="configsboardsboardparamsjson"><code>configs/boards/&lt;board&gt;/params.json</code>：绑定外设与构建选择</h2>
 <p>这里放置和<strong>MCU外设相关的配置与构建功能选择</strong>：是否需要USB、遥控器类型、使用哪个串口、遥控器类型、AHRS等service线程优先级和运行参数。</p>
 <p>例如，使用 DR16 时需要的配置：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"bindings"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">"remoter_uart"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uart5"</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">"uart_ports"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"host_link"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uart7"</span><span class="w"> </span><span class="p">},</span><span class="w"> </span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">"spi_buses"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"custom_sensor"</span><span class="p">:</span><span class="w"> </span><span class="s2">"spi6"</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="p">},</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">"remoter"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dr16"</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"bindings"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">"remoter_uart"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uart5"</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">"vt03_uart"</span><span class="p">:</span><span class="w"> </span><span class="s2">"usart1"</span><span class="p">,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">"uart_ports"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"host_link"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uart7"</span><span class="w"> </span><span class="p">},</span><span class="w"> </span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="nt">"spi_buses"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"custom_sensor"</span><span class="p">:</span><span class="w"> </span><span class="s2">"spi6"</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="nt">"remoter"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dr16"</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">}</span>
 </code></pre></div>
 <p><code>bindings.spi_buses</code> 为应用<strong>自定义SPI取名</strong>。上例生成
 <code>app::spi::custom_sensor</code>，在上层应用中不应出现spi6具体spi实例</p>
 <p><code>bindings.uart_ports</code> 同样为<strong>自定义串口取名</strong>，上例生成
 <code>app::uart::host_link</code>，在上层应用中不应出现uart7具体串口实例</p>
-<h2 id="configsrobotjson"><code>configs/robot.json</code>：机器人设备</h2>
+<h2 id="configsboardsboardrobotjson"><code>configs/boards/&lt;board&gt;/robot.json</code>：机器人设备</h2>
 <p>描述当前机器人连接的"device"层设备：例如每台电机的具体配置、DMIMU</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"devices"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">"motors"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">"list"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="p">{</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">          </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"motor1"</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">          </span><span class="nt">"model"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dji_gm6020"</span><span class="p">,</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">          </span><span class="nt">"can_bus"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fdcan2"</span><span class="p">,</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">          </span><span class="nt">"can_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"classic"</span><span class="p">,</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">          </span><span class="nt">"can_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x205"</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">      </span><span class="p">]</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">"devices"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">"motors"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="nt">"list"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="p">{</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">          </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"motor1"</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">          </span><span class="nt">"model"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dji_gm6020"</span><span class="p">,</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">          </span><span class="nt">"can_bus"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fdcan2"</span><span class="p">,</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">          </span><span class="nt">"can_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"classic"</span><span class="p">,</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">          </span><span class="nt">"can_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x205"</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">      </span><span class="p">]</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>更多配置片段见<a href="../configuration-reference/">配置参考</a>。</strong></p>
 <h1 id="_1">生成结果和生效步骤</h1>
@@ -1978,15 +2018,15 @@
 </thead>
 <tbody>
 <tr>
-<td><code>configs/generated/config.hpp</code></td>
+<td><code>build/&lt;preset&gt;/generated/config.hpp</code></td>
 <td>外设枚举、板级绑定、功能开关和 <code>params::</code> 常量</td>
 </tr>
 <tr>
-<td><code>configs/generated/robot_config.hpp</code></td>
+<td><code>build/&lt;preset&gt;/generated/robot_config.hpp</code></td>
 <td>当前电机和 DMIMU 的 C++ 配置常量</td>
 </tr>
 <tr>
-<td><code>configs/generated/bsp_bindings.cpp</code></td>
+<td><code>build/&lt;preset&gt;/generated/bsp_bindings.cpp</code></td>
 <td>从 IOC 得到的 ADC、PWM 与 HAL 句柄绑定</td>
 </tr>
 </tbody>
@@ -1996,7 +2036,11 @@
 <ul>
 <li><code>devices.motors.list</code> 中的每台电机都会生成配置并决定要编译哪些电机协议，电机仍然需要进行register等初始化行为</li>
 </ul>
-<h1 id="todotestthread_priority-testauto_run_on_boot-confighpp">TODO：<code>test.thread_priority</code> 和 <code>test.auto_run_on_boot</code> 当前会生成到 <code>config.hpp</code>，但仓库内没有运行代码读取它们；修改这两个字段目前不会改变运行行为。</h1>
+<p><code>test.auto_run_on_boot</code> 由 <code>app_start()</code> 读取，用于决定是否自动调用 <code>diagnose_start()</code>。<code>test.thread_priority</code> 当前仍会生成，但现有诊断入口没有读取它；修改该字段不会改变运行行为。</p>
+<p><code>test.gpio_leds=true</code> 启用可选 GPIO 输出测试（保留原字段名兼容配置）。
+在 <code>bindings.gpio_outputs.test_gpio</code> 中选择 board.json 已声明的输出角色，
+测试每半秒交替设置有效/无效状态。无需三个 LED，不改变 IOC 引脚配置。
+例如 F4 可设置 <code>"test_gpio": "led_r"</code>。H7 也使用同一方式，需先有适合测试的板级输出角色；SPI 灯不属于 GPIO 输出测试。</p>
 <h1 id="_3">快速查找</h1>
 <table>
 <thead>
@@ -2008,19 +2052,19 @@
 <tbody>
 <tr>
 <td>板载 BMI088、LED 的固定连接</td>
-<td>当前板卡 profile 的 <code>boards/h723_v1/board.json</code>，并确认与 IOC 一致</td>
+<td>当前板卡 profile 的 <code>boards/&lt;board&gt;/board.json</code>，并确认与 IOC 一致</td>
 </tr>
 <tr>
 <td>是否构建 USBX、遥控器类型与 UART、服务运行参数</td>
-<td><code>configs/params.json</code></td>
+<td><code>configs/boards/&lt;board&gt;/params.json</code></td>
 </tr>
 <tr>
 <td>电机型号、CAN 总线、CAN ID、初始模式</td>
-<td><code>configs/robot.json</code> 的 <code>devices.motors</code></td>
+<td><code>configs/boards/&lt;board&gt;/robot.json</code> 的 <code>devices.motors</code></td>
 </tr>
 <tr>
 <td>查看生成后的 C++ 名称和当前结果</td>
-<td><code>configs/generated/config.hpp</code>、<code>robot_config.hpp</code>；只读，不修改</td>
+<td><code>build/&lt;preset&gt;/generated/config.hpp</code>、<code>robot_config.hpp</code>；只读，不修改</td>
 </tr>
 </tbody>
 </table>
